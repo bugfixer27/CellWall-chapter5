@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Membrane</title>
+    <meta name="description" content="The structure and function of plasma membranes (OpenStax Biology 2e, chapter 5), with a recap of the cell (chapter 4), as a real-time 3D scroll film." />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%2359e1ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2359e1ff' stroke-width='1.2'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <canvas id="gl" aria-hidden="true"></canvas>
+
+    <!-- fixed chrome -------------------------------------------------------->
+    <header class="bar">
+      <a class="mark" href="#hero" data-to="0">Membrane</a>
+      <p class="meta mono">Biology 2e<span class="sep">·</span>Ch. 5<span class="sep">·</span>1 screen ≈ <span data-scale-bar>23 µm</span></p>
+      <p class="chap mono"><span data-chnum>00</span><span class="sep">/</span>13 <span class="chname" data-chname>Membrane</span></p>
+    </header>
+    <nav class="rail" aria-label="Chapters">
+      <div class="rail-line"><div class="rail-fill"></div></div>
+    </nav>
+    <div class="cursor" aria-hidden="true"><div class="cursor-ring"></div><div class="cursor-dot"></div></div>
+    <div class="labels" data-labels aria-hidden="true"></div>
+
+    <main>
+      <!-- 00 · HERO ------------------------------------------------------------>
+      <section id="hero" class="hero" data-f0="0" data-f1="1" style="--h: 260vh">
+        <div class="sticky">
+          <h1 class="sr-only">Membrane: the structure and function of plasma membranes</h1>
+          <div class="hero-top mono">
+            <span>OpenStax Biology 2e · Chapter 5 · Structure and function of plasma membranes</span>
+          </div>
+          <p class="hero-sub" data-lines>Every cell is a drop of water held in by a film of lipid and protein five to ten nanometres thick. This is how that film decides what gets in and what gets out.</p>
+          <div class="hero-foot mono">
+            <span>Beginning with a recap of chapter 4: the cell</span>
+            <span class="cue"><i></i>Scroll</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 01 · THE ENDOMEMBRANE SYSTEM ----------------------------------------->
+      <section id="ch1" class="chapter" data-f0="1" data-f1="2" style="--h: 400vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">Recap · 4.3–4.4</span><h2 class="ch-title" data-chars>The cell, inside</h2></header>
+          <div class="beats">
+            <article class="beat" data-at="0,0.33">
+              <p class="eyebrow mono">§4.3 · Compartments</p>
+              <h3>A eukaryotic cell is a city of membranes.</h3>
+              <p>Inside the plasma membrane, more membranes wall off the nucleus, the endoplasmic reticulum, the Golgi apparatus, lysosomes, vesicles and mitochondria. Each compartment keeps its own chemistry. A lysosome's digestive enzymes, for example, work at a pH near 5, far more acidic than the cytosol around them. Mitochondria, each wrapped in two membranes, make the ATP that active transport will spend in §5.3.</p>
+            </article>
+            <article class="beat" data-at="0.33,0.66">
+              <p class="eyebrow mono">§4.4 · The endomembrane system</p>
+              <h3>One membrane, passed from hand to hand.</h3>
+              <p>The nuclear envelope, ER, Golgi, vesicles, lysosomes and plasma membrane work as one system. The outer nuclear membrane is continuous with the rough ER. Vesicles bud from the ER, fuse with the Golgi's <i>cis</i> face, and leave its <i>trans</i> face for lysosomes or for the plasma membrane. The bright specks travelling outward are vesicles.</p>
+            </article>
+            <article class="beat" data-at="0.66,1">
+              <p class="eyebrow mono">Why it matters for chapter 5</p>
+              <h3>Membrane proteins are built inside out.</h3>
+              <p>Ribosomes on the rough ER make membrane proteins and thread them into the ER membrane. Sugars are added in the ER and modified in the Golgi. When the vesicle fuses with the plasma membrane, the face that pointed into the ER now points out of the cell. That is why glycoproteins and glycolipids always carry their sugars on the outside.</p>
+            </article>
+          </div>
+          <aside class="inst inst-endo" aria-label="The endomembrane route">
+            <p class="mono label">The route of a membrane protein</p>
+            <ol class="route mono" data-route>
+              <li data-r="0"><i></i>Nucleus · DNA → mRNA</li>
+              <li data-r="1"><i></i>Rough ER · made, inserted, glycosylated</li>
+              <li data-r="2"><i></i>Transport vesicle</li>
+              <li data-r="3"><i></i>Golgi · <i>cis</i> → <i>trans</i> · sugars modified</li>
+              <li data-r="4"><i></i>Secretory vesicle</li>
+              <li data-r="5"><i></i>Plasma membrane · sugars now face out</li>
+            </ol>
+            <ul class="key mono key-cols">
+              <li><i style="background:#8cf2ff"></i>Plasma membrane</li>
+              <li><i style="background:#4a6bff"></i>Nucleus</li>
+              <li><i style="background:#44ff7a"></i>Rough ER</li>
+              <li><i style="background:#80f2c0"></i>Smooth ER</li>
+              <li><i style="background:#ffa82e"></i>Golgi</li>
+              <li><i style="background:#ff3d85"></i>Mitochondria</li>
+              <li><i style="background:#ff4d33"></i>Lysosomes</li>
+              <li><i style="background:#fff0a0"></i>Vesicles</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <!-- interlude I -->
+      <section id="int1" class="interlude" data-f0="2" data-f1="2" style="--h: 230vh">
+        <div class="int-inner">
+          <h3 class="mega" data-mega>Every organelle<br />is wrapped<br />in membrane.</h3>
+          <figure class="fig fig-wide">
+            <div class="plate" data-plate="cell"></div>
+            <figcaption class="mono"><b>Plate I</b> · One animal cell, about 20 <span class="unit">µm</span> across, in nine fluorescent colours. Rendered from this page’s cell.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <!-- 02 · SCAFFOLD AND SEAMS -------------------------------------------------->
+      <section id="ch2" class="chapter" data-f0="2" data-f1="3" style="--h: 460vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">Recap · 4.5–4.6</span><h2 class="ch-title" data-chars>Scaffold and seams</h2></header>
+          <svg class="junctions" data-junctions viewBox="0 0 640 520" aria-hidden="true"></svg>
+          <div class="beats">
+            <article class="beat" data-at="0,0.26">
+              <p class="eyebrow mono">§4.5 · The cytoskeleton</p>
+              <h3>Three kinds of fibre hold the cell in shape.</h3>
+              <p>Microfilaments of actin (about 7&nbsp;nm) form a dense cortex just under the plasma membrane. Intermediate filaments (8–10&nbsp;nm) bear tension and anchor the nucleus; the lamina lining the nuclear envelope is made of them. Microtubules (about 25&nbsp;nm) radiate from the centrosome, and motor proteins haul vesicles along them.</p>
+            </article>
+            <article class="beat" data-at="0.26,0.5">
+              <p class="eyebrow mono">Why it matters for chapter 5</p>
+              <h3>The membrane is tethered from inside.</h3>
+              <p>Peripheral proteins on the membrane’s cytoplasmic face tie it to cytoskeletal fibres. Actin also does the heavy work of bulk transport in §5.4: it pushes the membrane out into the arms that engulf a bacterium, and helps pinch off vesicles.</p>
+            </article>
+            <article class="beat" data-at="0.5,0.8">
+              <p class="eyebrow mono">§4.6 · Connections between cells</p>
+              <h3>Where cells meet, membranes are joined.</h3>
+              <p>Tight junctions seal neighbouring animal cells so fluid can’t leak between them. Desmosomes spot-weld cells together, with cadherins tied to intermediate filaments. Gap junctions are channels of connexin proteins that let ions and small molecules pass directly between cells. Plant cells connect through their walls by plasmodesmata. Outside, integrins in the membrane grip the collagen and proteoglycans of the extracellular matrix.</p>
+            </article>
+            <article class="beat" data-at="0.8,1">
+              <p class="eyebrow mono">Zoom · ×2 000</p>
+              <h3>Now, the membrane itself.</h3>
+              <p>This cell is about 20&nbsp;µm across. Its surface is a film about 7&nbsp;nm thick, roughly 1/3 000 of that. Going in.</p>
+            </article>
+          </div>
+          <aside class="inst inst-cyto" aria-label="Cytoskeleton fibres">
+            <p class="mono label">Fibre diameters, to scale</p>
+            <div class="fibres" data-fibres></div>
+            <dl class="rows mono">
+              <div><dt>Microtubules from</dt><dd>Centrosome</dd></div>
+              <div><dt>Cortex under the membrane</dt><dd>Actin</dd></div>
+              <div><dt>Nuclear lamina</dt><dd>Intermediate filaments</dd></div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 03 · FLUID MOSAIC --------------------------------------------------------->
+      <section id="ch3" class="chapter" data-f0="3" data-f1="4" style="--h: 460vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.1</span><h2 class="ch-title" data-chars>Fluid mosaic</h2></header>
+          <div class="beats">
+            <article class="beat" data-at="0.04,0.27">
+              <p class="eyebrow mono">1972 · Singer &amp; Nicolson</p>
+              <h3>A mosaic that flows.</h3>
+              <p>The fluid mosaic model describes the plasma membrane as a mosaic of phospholipids, cholesterol, proteins and carbohydrates that are free to move sideways past one another. It is still the best description of the membrane half a century later.</p>
+            </article>
+            <article class="beat" data-at="0.27,0.5">
+              <p class="eyebrow mono">More than a wall</p>
+              <h3>It bends, it identifies, it listens.</h3>
+              <p>The membrane lets red and white blood cells change shape to squeeze through capillaries. It carries the markers that let cells recognise one another. Its receptors pick up signals from outside and pass them in. Viruses such as HIV hijack those receptors to get in, and mutations in receptor genes can break the signalling.</p>
+            </article>
+            <article class="beat" data-at="0.5,0.74">
+              <p class="eyebrow mono"><span data-v="thick">5–10</span> nm thick</p>
+              <h3>The thinnest thing that matters.</h3>
+              <p>The membrane is 5 to 10&nbsp;nm thick. A red blood cell, about 8&nbsp;µm across, is roughly <b data-v="rbcRatio">1 000</b> times wider than the membrane around it. This patch is 60&nbsp;nm square: 1/130 of a red cell’s width.</p>
+            </article>
+            <article class="beat" data-at="0.74,1">
+              <p class="eyebrow mono">Composition by mass</p>
+              <h3>Half protein, not half lipid.</h3>
+              <p>In a typical human cell membrane, proteins make up about 50% of the mass, lipids about 40% and carbohydrates the remaining 10%. The recipe follows the job. Myelin, which insulates nerve fibres, is 76% lipid. The inner mitochondrial membrane, packed with the machinery that makes ATP, is 76% protein. A red cell’s plasma membrane is 30% lipid.</p>
+            </article>
+          </div>
+          <aside class="inst inst-comp" aria-label="Membrane composition">
+            <p class="mono label">Composition by mass</p>
+            <div class="comp" data-comp></div>
+            <ul class="key mono"><li><i class="k-p"></i>Protein</li><li><i class="k-l"></i>Lipid</li><li><i class="k-c"></i>Carbohydrate / other</li></ul>
+            <dl class="rows mono">
+              <div><dt>Thickness</dt><dd>5–10 nm</dd></div>
+              <div><dt>Red cell / membrane</dt><dd>≈ <span data-v="rbcRatio">1 000</span>×</dd></div>
+              <div><dt>Patch shown</dt><dd>60 × 60 nm</dd></div>
+              <div><dt>Lipids drawn</dt><dd data-v="lipids">10 000</dd></div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 04 · PHOSPHOLIPIDS (the atlas plate) ------------------------------------->
+      <section id="ch4" class="chapter paper-ch" data-f0="4" data-f1="5" style="--h: 480vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.1</span><h2 class="ch-title" data-chars>Phospholipids</h2></header>
+          <div class="beats">
+            <article class="beat" data-at="0.03,0.3">
+              <p class="eyebrow mono">Anatomy · Fig. 5.3</p>
+              <h3>Two natures in one molecule.</h3>
+              <p>A phospholipid is a three-carbon glycerol backbone. Carbons 1 and 2 each carry a fatty acid; carbon 3 carries a phosphate-containing group. The phosphate head is polar, sometimes charged, and hydrophilic. The fatty-acid tails are non-polar and hydrophobic. A molecule with both natures is <i>amphiphilic</i>.</p>
+            </article>
+            <article class="beat" data-at="0.3,0.54">
+              <p class="eyebrow mono">In water</p>
+              <h3>Water sorts them out.</h3>
+              <p>Heads form hydrogen bonds with water; tails can’t. Scattered in water, phospholipids assemble on their own, with no energy spent and no instructions, burying their tails away from water and turning their heads out toward it.</p>
+            </article>
+            <article class="beat" data-at="0.54,0.78">
+              <p class="eyebrow mono">Fig. 5.4</p>
+              <h3>Micelles, liposomes, bilayers.</h3>
+              <p>A single layer closed around its tails is a micelle. Two layers tail to tail make a bilayer, which closes into a hollow sphere, a liposome, because an open edge would expose tails to water. <span class="note">Lipids with one tail favour micelles; two-tailed phospholipids favour bilayers.</span></p>
+            </article>
+            <article class="beat" data-at="0.78,1">
+              <p class="eyebrow mono">How the model was found</p>
+              <h3>Eighty years to see it.</h3>
+              <p>The membrane was identified in the 1890s, and by 1915 it was known to be lipid and protein. In 1935 Davson and Danielli proposed a sandwich of lipid between two layers of protein. Electron micrographs in the 1950s showed a “railroad track”, two dark lines that turned out to be the two layers of phospholipid heads. In 1972 Singer and Nicolson proposed the fluid mosaic.</p>
+            </article>
+          </div>
+          <aside class="inst inst-lipid" aria-label="A phospholipid and the history of the model">
+            <svg class="anatomy" data-anatomy viewBox="0 0 300 250" role="img" aria-label="Phospholipid structure"></svg>
+            <ol class="history mono" data-history></ol>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 05 · FLUIDITY ---------------------------------------------------------------->
+      <section id="ch5" class="chapter" data-f0="5" data-f1="6" style="--h: 460vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.1</span><h2 class="ch-title" data-chars>Fluidity</h2></header>
+          <div class="beats">
+            <article class="beat" data-at="0.04,0.25">
+              <p class="eyebrow mono">Cross-section · 37 °C</p>
+              <h3>A two-dimensional liquid.</h3>
+              <p>Phospholipids and many proteins drift sideways, and a lipid swaps places with a neighbour about ten million times a second. The sheet still holds together. It is fairly rigid and can burst if a cell takes in too much water, but it reseals around a fine needle when the needle is pulled out.</p>
+            </article>
+            <article class="beat" data-at="0.25,0.55">
+              <p class="eyebrow mono">Cooling to 4 °C</p>
+              <h3>Straight tails pack; kinked tails can’t.</h3>
+              <p>A saturated fatty acid has no double bonds, so its tail is straight, and straight tails pack tightly as the temperature falls: the membrane gets denser and stiffer. A double bond in an unsaturated tail puts a kink in it, highlighted here. The kinks keep the neighbours apart, so the membrane stays fluid in the cold.</p>
+            </article>
+            <article class="beat" data-at="0.55,0.75">
+              <p class="eyebrow mono">Adaptation</p>
+              <h3>Cold-water animals change their fats.</h3>
+              <p>Many organisms, fish among them, change the ratio of unsaturated to saturated fatty acids in their membranes as the temperature changes. A membrane rich in saturated fats would pack tight and become brittle in cold water, and more likely to rupture.</p>
+            </article>
+            <article class="beat" data-at="0.75,1">
+              <p class="eyebrow mono">Cholesterol</p>
+              <h3>A buffer against temperature.</h3>
+              <p>Cholesterol’s four fused rings sit alongside the phospholipids. In the cold it stops the tails from packing together; in the heat it limits how much they move. The membrane stays fluid enough, and firm enough, over a wider range of temperatures. Cholesterol also helps gather transmembrane proteins into lipid rafts.</p>
+            </article>
+          </div>
+          <aside class="inst inst-fluid" aria-label="Membrane fluidity">
+            <div class="big-clock mono" data-temp>37 °C</div>
+            <svg class="chart" data-fluid-chart viewBox="0 0 300 170" role="img" aria-label="Membrane fluidity against temperature"></svg>
+            <ul class="key mono">
+              <li><i class="k-sat"></i>Mostly saturated</li>
+              <li><i class="k-uns"></i>Mostly unsaturated</li>
+              <li><i class="k-cho"></i>With cholesterol</li>
+            </ul>
+            <p class="mono small">Schematic: the shape of the transition, not measured values.</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 06 · PROTEINS AND SUGARS ------------------------------------------------------>
+      <section id="ch6" class="chapter" data-f0="6" data-f1="7" style="--h: 480vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.1</span><h2 class="ch-title" data-chars>Proteins and sugars</h2></header>
+          <div class="beats">
+            <article class="beat" data-at="0.04,0.3">
+              <p class="eyebrow mono">Peripheral proteins</p>
+              <h3>On the surface, not in it.</h3>
+              <p>Peripheral proteins (yellow) sit on the inner or outer face, attached to integral proteins or to phospholipid heads. They work as enzymes, as attachment points for the cytoskeleton, and as cell-specific recognition sites. The body recognises its own proteins and attacks the foreign proteins of pathogens.</p>
+            </article>
+            <article class="beat" data-at="0.3,0.5">
+              <p class="eyebrow mono">Integral proteins · Fig. 5.5</p>
+              <h3>Threaded through the bilayer.</h3>
+              <p>Integral proteins cross the hydrophobic core. A single-pass protein needs one α-helix of 20–25 mostly hydrophobic amino acids. Complex ones cross up to 12 times, or roll β-sheets into a barrel. Their hydrophobic faces lie against the tails; their hydrophilic parts reach into the cytoplasm and the extracellular fluid. Some form channels with a pore down the middle. <span class="note">The textbook also calls these “integrins”. Strictly, integrins are one family of integral proteins: the ones that grip the extracellular matrix.</span></p>
+            </article>
+            <article class="beat" data-at="0.5,0.66">
+              <p class="eyebrow mono">Glycoproteins and glycolipids</p>
+              <h3>A sugar coat, outside only.</h3>
+              <p>Chains of 2 to 60 sugars, straight or branched, are attached to proteins (glycoproteins) and lipids (glycolipids) on the outer face. Together they form the <i>glycocalyx</i>. It is strongly hydrophilic and holds a layer of water at the cell surface. Its pattern works like an ID card: it is how the immune system tells “self” from “non-self”, and it matters in embryonic development and in cells sticking together to form tissues.</p>
+            </article>
+            <article class="beat" data-at="0.66,1">
+              <p class="eyebrow mono">Evolution connection · Fig. 5.6</p>
+              <h3>Viruses read the labels too.</h3>
+              <p>HIV binds CD4, a glycoprotein on helper T cells, to get in. Its own surface proteins mutate so quickly that antibodies against one version miss the next, which is a big part of why there is still no HIV vaccine. HIV also destroys the very immune cells that would fight it. Hepatitis viruses find liver cells the same way. <span class="note">Career connection: immunologists (a PhD or MD, then 2–3 years of specialist training and a board exam) work on vaccines, allergies, autoimmunity and transplants. Kizzmekia Corbett’s coronavirus research was instrumental in developing the Moderna COVID-19 vaccine.</span></p>
+            </article>
+          </div>
+          <aside class="inst inst-prot" aria-label="Membrane components">
+            <p class="mono label">Components and where they sit</p>
+            <dl class="rows mono comp-rows" data-parts>
+              <div data-k="0"><dt>Phospholipid</dt><dd>The main fabric</dd></div>
+              <div data-k="1"><dt>Cholesterol</dt><dd>Between phospholipids</dd></div>
+              <div data-k="2"><dt>Peripheral protein</dt><dd>On either face</dd></div>
+              <div data-k="3"><dt>Integral protein</dt><dd>Through the bilayer</dd></div>
+              <div data-k="4"><dt>Carbohydrate</dt><dd>Outer face only</dd></div>
+            </dl>
+            <div class="bigtag mono" data-sugar>Sugar chains: 2–60 monosaccharides</div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- interlude II · the sieve -->
+      <section id="int2" class="interlude sieve-int" data-f0="7" data-f1="7" style="--h: 300vh">
+        <div class="sticky sieve-sticky">
+          <p class="eyebrow mono sieve-eyebrow">§5.2 · Selectively permeable</p>
+          <div class="sieve" data-sieve aria-label="Small non-polar molecules cross the lipid bilayer; ions and polar molecules are stopped.">
+            <p class="sv-line"><span data-pass>O₂</span> <span>Na⁺</span> <span data-pass>CO₂</span> <span>glucose</span> <span data-pass>vitamin&nbsp;D</span> <span>K⁺</span> <span data-pass>steroid&nbsp;hormones</span> <span>Cl⁻</span> <span>amino&nbsp;acids</span> <span data-pass>vitamin&nbsp;A</span> <span>Ca²⁺</span></p>
+            <div class="sv-mem"><i></i><i></i></div>
+            <span class="sv-side a mono">Outside</span><span class="sv-side b mono">Inside the cell</span>
+            <div class="sv-floor"></div>
+          </div>
+          <p class="sieve-note mono">Drawn: the lipid bilayer. Small and non-polar falls through; charged or polar stays on top.</p>
+        </div>
+      </section>
+
+      <!-- 07 · DIFFUSION -------------------------------------------------------------->
+      <section id="ch7" class="chapter" data-f0="7" data-f1="8" style="--h: 460vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.2</span><h2 class="ch-title" data-chars>Diffusion</h2></header>
+          <div class="side-tag mono"><span>Outside the cell</span><span>Cytoplasm</span></div>
+          <div class="beats">
+            <article class="beat" data-at="0.04,0.28">
+              <p class="eyebrow mono">Passive transport</p>
+              <h3>If it dissolves in fat, it gets through.</h3>
+              <p>The hydrophobic core lets small, non-polar molecules cross easily: O₂ (red), CO₂ (white), the fat-soluble vitamins A, D, E and K, and fat-soluble drugs and hormones. Ions such as Na⁺, K⁺, Ca²⁺ and Cl⁻, and polar molecules such as sugars and amino acids, bounce off. They will need proteins.</p>
+            </article>
+            <article class="beat" data-at="0.28,0.56">
+              <p class="eyebrow mono">Every substance for itself</p>
+              <h3>Downhill, with no energy spent.</h3>
+              <p>Diffusion carries a substance from where it is concentrated to where it is scarce. Here O₂ moves into the cell while CO₂ moves out, each down its own concentration gradient, independently. A gradient is stored potential energy, and diffusion spends it.</p>
+            </article>
+            <article class="beat" data-at="0.56,0.8">
+              <p class="eyebrow mono">Dynamic equilibrium</p>
+              <h3>Then nothing changes, though everything moves.</h3>
+              <p>Once the two sides are even, molecules keep crossing, but equally in both directions, so there is no net movement. The chart on the right is counted live from the molecules on screen.</p>
+            </article>
+            <article class="beat" data-at="0.8,1">
+              <p class="eyebrow mono">Rate of diffusion</p>
+              <h3>Distance is why cells are small.</h3>
+              <p>O₂ diffuses across a 10&nbsp;µm cell in about <b data-v="t10um">17 ms</b>, across 1&nbsp;mm in <b data-v="t1mm">3 min</b>, and across 1&nbsp;cm in <b data-v="t1cm">5 h</b>. Time grows with the square of distance, so large cells must be flat or have their own transport systems. Pressure can speed diffusion along: in <i>filtration</i>, blood pressure forces water and solutes out of the blood into the kidney’s tubules.</p>
+            </article>
+          </div>
+          <aside class="inst inst-diff" aria-label="Diffusion, counted">
+            <p class="mono label">Share of each gas outside the cell</p>
+            <svg class="chart" data-diff-chart viewBox="0 0 300 150" role="img" aria-label="Fraction of O2 and CO2 outside the cell over time"></svg>
+            <dl class="rows mono">
+              <div class="o2"><dt>O₂ outside / inside</dt><dd data-diff="o2">0 / 0</dd></div>
+              <div class="co2"><dt>CO₂ outside / inside</dt><dd data-diff="co2">0 / 0</dd></div>
+              <div><dt>Ions across</dt><dd data-diff="ions">0</dd></div>
+            </dl>
+            <ol class="factors mono" data-factors>
+              <li>Size of the gradient</li><li>Mass of the molecule</li><li>Temperature</li><li>Density of the solvent</li><li>Solubility in lipid</li><li>Surface area and thickness</li><li>Distance travelled</li>
+            </ol>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 08 · FACILITATED TRANSPORT ---------------------------------------------------->
+      <section id="ch8" class="chapter" data-f0="8" data-f1="9" style="--h: 460vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.2</span><h2 class="ch-title" data-chars>Facilitated transport</h2></header>
+          <div class="side-tag mono"><span>Outside the cell</span><span>Cytoplasm</span></div>
+          <div class="beats">
+            <article class="beat" data-at="0.04,0.3">
+              <p class="eyebrow mono">Channel proteins · aquaporin</p>
+              <h3>A tunnel lined with water.</h3>
+              <p>Ions and polar molecules can still move downhill if a protein gives them a way through. Channel proteins are transmembrane proteins with a hydrophilic pore. Aquaporins (blue) let water through very fast, one molecule behind another, both ways at once. They matter most in red blood cells and in the kidney’s tubules.</p>
+            </article>
+            <article class="beat" data-at="0.3,0.66">
+              <p class="eyebrow mono">Gated channels · Fig. 5.9</p>
+              <h3>Some channels wait for a signal.</h3>
+              <p>Open channels are always open; gated channels open only when an ion binds or some other trigger acts. When this K⁺ channel (pink) opens, K⁺ streams out down its gradient. Nerve and muscle cells fire and contract with gated Na⁺, K⁺ and Ca²⁺ channels, and a single channel can pass tens of millions of ions a second.</p>
+            </article>
+            <article class="beat" data-at="0.66,1">
+              <p class="eyebrow mono">Carrier proteins · Fig. 5.10</p>
+              <h3>One at a time, by changing shape.</h3>
+              <p>A carrier (violet) binds its passenger, changes shape, and releases it on the other side, a thousand to a million molecules a second. A membrane has only so many carriers, and once they are all busy they are <i>saturated</i>: a steeper gradient no longer speeds things up. That is why, in diabetes, the kidney “spills” glucose into the urine: its glucose carriers can’t reclaim it all. GLUT proteins carry glucose and other hexose sugars.</p>
+            </article>
+          </div>
+          <aside class="inst inst-fac" aria-label="Transport rate">
+            <p class="mono label">Rate of transport vs gradient</p>
+            <svg class="chart" data-fac-chart viewBox="0 0 300 170" role="img" aria-label="Channel and simple diffusion rise linearly; a carrier saturates"></svg>
+            <dl class="rows mono">
+              <div><dt>Channel</dt><dd>~10⁷ s⁻¹</dd></div>
+              <div><dt>Carrier</dt><dd>10³–10⁶ s⁻¹</dd></div>
+              <div><dt data-fac="k">Crossed so far</dt><dd data-fac="v">0</dd></div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 09 · OSMOSIS AND TONICITY --------------------------------------------------->
+      <section id="ch9" class="chapter tonic-ch" data-f0="9" data-f1="10" style="--h: 820vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.2</span><h2 class="ch-title" data-chars>Osmosis and tonicity</h2></header>
+          <div class="beats">
+            <article class="beat" data-at="0.02,0.28">
+              <p class="eyebrow mono">Osmosis · Fig. 5.11</p>
+              <h3>Water moves toward the solute.</h3>
+              <p>Osmosis is the diffusion of free water across a membrane that the solute can’t cross. Water moves from the side with more free water (less solute) to the side with less, until the gradient is gone or the pressure of the rising column balances it. Two full glasses, one with a teaspoon of sugar and one with a quarter cup: the first holds more water.</p>
+            </article>
+            <article class="beat" data-at="0.3,0.5">
+              <p class="eyebrow mono">Tonicity · Fig. 5.12</p>
+              <h3>Hypertonic: the cell shrivels.</h3>
+              <p>Tonicity is how a solution changes a cell’s volume. When the outside has the higher osmolarity (total solute concentration), water leaves. A red cell shrinks and puckers into spikes (<i>crenation</i>). Its cytosol gets denser and slows diffusion inside it.</p>
+            </article>
+            <article class="beat" data-at="0.5,0.64">
+              <p class="eyebrow mono">Hypotonic</p>
+              <h3>Hypotonic: the cell swells and bursts.</h3>
+              <p>When the outside has the lower osmolarity, water floods in. A red cell’s membrane barely stretches, so the most it can do is round up into a sphere at about <b data-v="lyseV">1.6</b>× its volume. That point comes at about <b data-v="lyseMosm">150</b>&nbsp;mOsm/L. Past it, the gaps between lipids and proteins tear open, and the cell <i>lyses</i>, leaving an empty “ghost”.</p>
+            </article>
+            <article class="beat" data-at="0.64,0.72">
+              <p class="eyebrow mono">Isotonic</p>
+              <h3>Isotonic: no net change.</h3>
+              <p>With equal osmolarity inside and out, water still moves both ways, but the volume holds. Osmolarity counts particles, not their size: a clear solution can out-pull a cloudy one full of cells. 0.9% saline is about <b data-v="saline">308</b>&nbsp;mOsm/L, close to blood. So if a patient’s red cells burst after an “isotonic” drip, the saline was not isotonic. It was hypotonic.</p>
+            </article>
+            <article class="beat" data-at="0.73,0.87">
+              <p class="eyebrow mono">Fig. 5.13 · Plants, fungi, bacteria</p>
+              <h3>A wall changes the rules.</h3>
+              <p>A cell wall keeps plant cells from bursting. Their cytoplasm stays slightly hypertonic, so water enters until the membrane presses against the wall. This is <i>turgor</i> (right), and it holds up non-woody plants. In an isotonic solution the cell is flaccid (centre). In a hypertonic one the membrane pulls away from the wall. This is <i>plasmolysis</i> (left), and the plant wilts.</p>
+            </article>
+            <article class="beat" data-at="0.87,1">
+              <p class="eyebrow mono">Osmoregulation</p>
+              <h3>Everyone else pays to stay in balance.</h3>
+              <p>Paramecia and amoebae pump water out through contractile vacuoles. Marine invertebrates simply match the sea. Fish spend about <b data-v="fish">5</b>% of their energy on it: freshwater fish absorb salt through their gills and make dilute urine, while saltwater fish excrete salt and make concentrated urine. In us, kidneys set the body’s water. Osmoreceptors in the brain trigger a hormone that makes the kidneys hold water when blood solutes rise. Albumin, too large to cross membranes, holds water in the blood.</p>
+            </article>
+          </div>
+          <aside class="inst inst-tonic" aria-label="Tonicity">
+            <div class="utube" data-utube-wrap>
+              <svg class="chart" data-utube viewBox="0 0 300 200" role="img" aria-label="U-tube: water crosses a semipermeable membrane toward the sugar solution"></svg>
+            </div>
+            <table class="tonic mono" data-tonic>
+              <thead><tr><th></th><th>Hyper</th><th>Iso</th><th>Hypo</th></tr></thead>
+              <tbody>
+                <tr><td>Outside, mOsm/L</td><td data-t="o0">300</td><td data-t="o1">300</td><td data-t="o2">300</td></tr>
+                <tr><td>Inside, mOsm/L</td><td>300</td><td>300</td><td>300</td></tr>
+                <tr><td>Volume</td><td data-t="v0">100%</td><td data-t="v1">100%</td><td data-t="v2">100%</td></tr>
+                <tr><td>Net water</td><td data-t="w0">—</td><td data-t="w1">—</td><td data-t="w2">—</td></tr>
+                <tr class="state"><td>State</td><td data-t="s0">Normal</td><td data-t="s1">Normal</td><td data-t="s2">Normal</td></tr>
+              </tbody>
+            </table>
+            <p class="mono small">Volume from Boyle–van ’t Hoff, V/V₀ = b + (1 − b)·π₀/π, b = 0.4.</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- interlude III · plates -->
+      <section id="int3" class="interlude" data-f0="10" data-f1="10" style="--h: 280vh">
+        <div class="int-inner">
+          <p class="eyebrow mono">Field notes</p>
+          <h3 class="mega mega-sm" data-mega>Three solutions,<br />three fates.</h3>
+          <div class="bento bento-4">
+            <figure class="fig"><div class="plate" data-plate="rbcHyper"></div><figcaption class="mono"><b>Plate II</b> · Hypertonic, 450 mOsm/L: crenated.</figcaption></figure>
+            <figure class="fig"><div class="plate" data-plate="rbcIso"></div><figcaption class="mono"><b>Plate III</b> · Isotonic, 300 mOsm/L: a biconcave disc 7.8 <span class="unit">µm</span> across.</figcaption></figure>
+            <figure class="fig"><div class="plate" data-plate="rbcHypo"></div><figcaption class="mono"><b>Plate IV</b> · Hypotonic, 100 mOsm/L: lysed, a ghost.</figcaption></figure>
+            <figure class="fig"><div class="plate" data-plate="plants"></div><figcaption class="mono"><b>Plate V</b> · Plant cells: plasmolysed, flaccid, turgid.</figcaption></figure>
+          </div>
+        </div>
+      </section>
+
+      <!-- 10 · ACTIVE TRANSPORT --------------------------------------------------------->
+      <section id="ch10" class="chapter" data-f0="10" data-f1="11" style="--h: 600vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.3</span><h2 class="ch-title" data-chars>Active transport</h2></header>
+          <div class="side-tag mono"><span>Outside the cell</span><span>Cytoplasm</span></div>
+          <div class="beats">
+            <article class="beat" data-at="0.08,0.2">
+              <p class="eyebrow mono">The electrochemical gradient</p>
+              <h3>Ions feel two pulls.</h3>
+              <p>An ion responds to its concentration gradient and to the voltage across the membrane. Together they make its <i>electrochemical gradient</i>. The inside of a living cell is negative (about <b data-v="vrest">−70</b>&nbsp;mV in a neuron at rest). It holds more K⁺ (violet) and less Na⁺ (gold) than the fluid outside. Negatively charged proteins that can’t leave add to the charge.</p>
+            </article>
+            <article class="beat" data-at="0.2,0.3">
+              <p class="eyebrow mono">Na⁺ vs K⁺</p>
+              <h3>Na⁺ is pushed in twice. K⁺ is torn.</h3>
+              <p>For Na⁺, both its concentration gradient and the negative interior point inward. For K⁺, its concentration gradient points out, but the charge pulls it in. <span class="note">Nernst potentials at 37 °C: E<sub>Na</sub> ≈ <span data-v="eNa">+67</span> mV, E<sub>K</sub> ≈ <span data-v="eK">−95</span> mV.</span></p>
+            </article>
+            <article class="beat" data-at="0.3,0.39"><p class="eyebrow mono">Na⁺/K⁺ pump · step 1</p><h3>Three Na⁺ bind.</h3><p>Moving ions against their gradient costs energy, paid here directly in ATP. <i>Primary active transport.</i> Facing the inside, the pump has a high affinity for Na⁺, and three Na⁺ bind.</p></article>
+            <article class="beat" data-at="0.39,0.48"><p class="eyebrow mono">Step 2</p><h3>ATP is split.</h3><p>The pump hydrolyses ATP. A low-energy phosphate group attaches to the pump, and ADP leaves.</p></article>
+            <article class="beat" data-at="0.48,0.57"><p class="eyebrow mono">Step 3</p><h3>It turns to face outside.</h3><p>The pump changes shape and opens to the outside. Its affinity for Na⁺ drops, and the three Na⁺ leave.</p></article>
+            <article class="beat" data-at="0.57,0.66"><p class="eyebrow mono">Step 4</p><h3>Two K⁺ bind.</h3><p>The new shape has a high affinity for K⁺. Two K⁺ bind, and the phosphate group detaches.</p></article>
+            <article class="beat" data-at="0.66,0.75"><p class="eyebrow mono">Step 5</p><h3>It turns back to face inside.</h3><p>With the phosphate gone and K⁺ bound, the pump returns to its inward-facing shape.</p></article>
+            <article class="beat" data-at="0.75,0.86"><p class="eyebrow mono">Step 6</p><h3>K⁺ is released. Again.</h3><p>Now its affinity for K⁺ is low, and the two K⁺ enter the cytoplasm. The affinity for Na⁺ is high again, and the cycle restarts.</p></article>
+            <article class="beat" data-at="0.86,1">
+              <p class="eyebrow mono">Electrogenic</p>
+              <h3>Three out, two in: a charge.</h3>
+              <p>Each cycle moves one net positive charge out, making the inside slightly more negative. It is an <i>electrogenic pump</i>. One cycle does about <b data-v="pumpWork">44</b>&nbsp;kJ of work per mole, paid from ATP’s ~<b data-v="atpDG">50</b>. Red blood cells spend most of their energy on it, and metabolic poisons that stop ATP production stop it too.</p>
+            </article>
+          </div>
+          <aside class="inst inst-active" aria-label="The Na+/K+ pump">
+            <div class="ions" data-ions></div>
+            <dl class="rows mono">
+              <div><dt>Membrane potential</dt><dd data-v="vrestT">−70 mV</dd></div>
+              <div class="warm"><dt>Na⁺ pumped out</dt><dd data-pump="na">0</dd></div>
+              <div class="cool"><dt>K⁺ pumped in</dt><dd data-pump="k">0</dd></div>
+              <div><dt>ATP spent</dt><dd data-pump="atp">0</dd></div>
+            </dl>
+            <ol class="steps mono" data-steps>
+              <li>3 Na⁺ bind (facing in)</li><li>ATP → ADP + P~pump</li><li>Opens out · Na⁺ leave</li><li>2 K⁺ bind · P leaves</li><li>Turns back in</li><li>K⁺ released inside</li>
+            </ol>
+          </aside>
+        </div>
+      </section>
+
+      <!-- interlude IV -->
+      <section id="int4" class="interlude interlude-short" data-f0="11" data-f1="11" style="--h: 170vh">
+        <div class="int-inner center">
+          <h3 class="mega mega-weight" data-weight>Against the<br />gradient.</h3>
+        </div>
+      </section>
+
+      <!-- 11 · COTRANSPORT --------------------------------------------------------------->
+      <section id="ch11" class="chapter" data-f0="11" data-f1="12" style="--h: 480vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.3</span><h2 class="ch-title" data-chars>Cotransport</h2></header>
+          <div class="side-tag mono" data-side-tag><span data-side-a>Outside the cell</span><span data-side-b>Cytoplasm</span></div>
+          <div class="beats">
+            <article class="beat" data-at="0.04,0.18">
+              <p class="eyebrow mono">Carrier designs</p>
+              <h3>Uniporter, symporter, antiporter.</h3>
+              <p>A uniporter carries one kind of ion or molecule. A symporter carries two different ones in the same direction, and an antiporter carries them in opposite directions. The Na⁺/K⁺ pump is an antiporter. The same designs also work in facilitated diffusion, without ATP.</p>
+            </article>
+            <article class="beat" data-at="0.18,0.5">
+              <p class="eyebrow mono">Secondary active transport</p>
+              <h3>Sodium, running downhill, pays for glucose.</h3>
+              <p>The pump piles Na⁺ up outside. When Na⁺ flows back in through a symporter (orange), down its electrochemical gradient, it brings glucose with it, <i>against</i> glucose’s own gradient. No ATP is spent at this step. The energy was stored in the Na⁺ gradient by primary active transport. Amino acids enter cells the same way. <span class="note">This symporter couples 2 Na⁺ to each glucose, as SGLT1 does.</span></p>
+            </article>
+            <article class="beat" data-at="0.5,1">
+              <p class="eyebrow mono">Inner mitochondrial membrane</p>
+              <h3>Protons turn a motor.</h3>
+              <p>Cells also store energy as a gradient of H⁺. In mitochondria, H⁺ pumped out of the matrix flows back through ATP synthase, and its potential energy becomes the kinetic energy of a spinning rotor. Each H⁺ advances the ring one subunit. One full turn joins ADP and phosphate into three ATP. <span class="note">The ring has 8 subunits in mammals and 10 in yeast; it is drawn here with 10.</span></p>
+            </article>
+          </div>
+          <aside class="inst inst-co" aria-label="Energy ledger">
+            <svg class="porters" data-porters viewBox="0 0 300 90" role="img" aria-label="Uniporter, symporter and antiporter"></svg>
+            <dl class="rows mono">
+              <div class="warm"><dt>Na⁺ let in</dt><dd data-co="na">0</dd></div>
+              <div><dt>Glucose brought in</dt><dd data-co="glu">0</dd></div>
+              <div class="cool"><dt>H⁺ through ATP synthase</dt><dd data-co="h">0</dd></div>
+              <div><dt>Rotor turns</dt><dd data-co="turns">0.0</dd></div>
+              <div><dt>ATP made</dt><dd data-co="atp">0</dd></div>
+            </dl>
+            <p class="mono small">ATP → Na⁺ gradient (primary) → glucose (secondary)</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 12 · BULK TRANSPORT --------------------------------------------------------------->
+      <section id="ch12" class="chapter" data-f0="12" data-f1="13" style="--h: 520vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">5.4</span><h2 class="ch-title" data-chars>Bulk transport</h2></header>
+          <div class="beats">
+            <article class="beat" data-at="0.04,0.33">
+              <p class="eyebrow mono">Phagocytosis · “cell eating”</p>
+              <h3>Wrap it, swallow it, digest it.</h3>
+              <p>Some cargo is simply too big to cross. In <i>endocytosis</i> the membrane surrounds it and pinches off as a vesicle, and this takes energy. In phagocytosis the cargo is a whole bacterium. Neutrophils, a kind of white blood cell, destroy invaders this way. The vesicle then fuses with a lysosome (red), whose enzymes digest the contents. <span class="note">The textbook shows a clathrin-coated region here. Phagocytosis is mainly driven by actin; clathrin is the signature of receptor-mediated endocytosis, below.</span></p>
+            </article>
+            <article class="beat" data-at="0.33,0.56">
+              <p class="eyebrow mono">Pinocytosis · potocytosis</p>
+              <h3>Sipping.</h3>
+              <p>Pinocytosis (“cell drinking”, described by Warren Lewis in 1929) takes in droplets of extracellular fluid and the molecules dissolved in them. Its vesicles are much smaller and don’t fuse with lysosomes. Potocytosis uses caveolin, not clathrin, to form even smaller flask-shaped caveolae, rich in receptors and lipid rafts. Some carry cargo right across the cell (<i>transcytosis</i>) or deliver it to the ER.</p>
+            </article>
+            <article class="beat" data-at="0.56,0.81">
+              <p class="eyebrow mono">Receptor-mediated endocytosis</p>
+              <h3>Only what was ordered.</h3>
+              <p>Receptors bind a specific cargo, here LDL particles (gold) that carry cholesterol, and cluster in a pit coated with clathrin on its inner face. In familial hypercholesterolaemia the LDL receptors are defective or missing, so LDL can’t be cleared from the blood and cholesterol climbs to life-threatening levels. Flu viruses, diphtheria toxin and cholera toxin use receptors like these to get in.</p>
+            </article>
+            <article class="beat" data-at="0.81,1">
+              <p class="eyebrow mono">Exocytosis</p>
+              <h3>The same thing, in reverse.</h3>
+              <p>A vesicle fuses with the inner face of the plasma membrane and opens to the outside, releasing what it carries. Cells secrete extracellular-matrix proteins this way, and neurons release neurotransmitters into the synaptic cleft. The vesicle’s membrane becomes part of the plasma membrane.</p>
+            </article>
+          </div>
+          <aside class="inst inst-bulk" aria-label="Kinds of bulk transport">
+            <dl class="rows mono bulk-rows" data-bulk>
+              <div data-k="0"><dt>Phagocytosis</dt><dd>Cells, large particles</dd></div>
+              <div data-k="1"><dt>Pinocytosis</dt><dd>Fluid, small molecules</dd></div>
+              <div data-k="1"><dt>Potocytosis · caveolin</dt><dd>Small molecules</dd></div>
+              <div data-k="2"><dt>Receptor-mediated · clathrin</dt><dd>Specific macromolecules</dd></div>
+              <div data-k="3"><dt>Exocytosis</dt><dd>Secretion, waste</dd></div>
+            </dl>
+            <p class="mono small">1 unit on screen here = 100 nm. The membrane’s two leaflets are the double line.</p>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 13 · THE WHOLE BORDER ------------------------------------------------------------->
+      <section id="ch13" class="chapter" data-f0="13" data-f1="14" style="--h: 460vh">
+        <div class="sticky">
+          <header class="ch-head"><span class="ch-num mono">Summary</span><h2 class="ch-title" data-chars>The whole border</h2></header>
+          <div class="summary" data-summary>
+            <table class="sum mono">
+              <thead><tr><th>Transport method</th><th>Active / passive</th><th>Material transported</th></tr></thead>
+              <tbody>
+                <tr><td>Diffusion</td><td>Passive</td><td>Small, low-molecular-weight material</td></tr>
+                <tr><td>Osmosis</td><td>Passive</td><td>Water</td></tr>
+                <tr><td>Facilitated transport</td><td>Passive</td><td>Na⁺, K⁺, Ca²⁺, glucose</td></tr>
+                <tr><td>Primary active transport</td><td>Active</td><td>Na⁺, K⁺, Ca²⁺</td></tr>
+                <tr><td>Secondary active transport</td><td>Active</td><td>Amino acids, lactose</td></tr>
+                <tr><td>Phagocytosis</td><td>Active</td><td>Large macromolecules, whole cells, cellular structures</td></tr>
+                <tr><td>Pinocytosis, potocytosis</td><td>Active</td><td>Small molecules (liquids / water)</td></tr>
+                <tr><td>Receptor-mediated endocytosis</td><td>Active</td><td>Large quantities of macromolecules</td></tr>
+              </tbody>
+            </table>
+            <p class="mono small">After OpenStax Biology 2e, Table 5.2</p>
+          </div>
+          <div class="beats">
+            <article class="beat" data-at="0.03,0.42">
+              <p class="eyebrow mono">Summary</p>
+              <h3>Every way across.</h3>
+              <p>Everything in chapter 5 fits in one table: two kinds of passive transport through the lipids and proteins, two kinds of active transport through proteins, and three ways through the membrane itself.</p>
+            </article>
+            <article class="beat" data-at="0.44,0.72">
+              <p class="eyebrow mono">Back to the cell</p>
+              <h3>Passive when it can, active when it must.</h3>
+              <p>Small non-polar molecules slip through the lipids. Water, ions and sugars ride channels and carriers downhill. Uphill work is paid for in ATP, directly or through a stored gradient. Anything too big goes by vesicle. All of it happens in the glowing cyan film around this cell.</p>
+            </article>
+            <article class="beat beat-final" data-at="0.74,1.01">
+              <h3 class="final">A cell is whatever its membrane decides to&nbsp;keep.</h3>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- outro ------------------------------------------------------------------------>
+      <section id="outro" class="outro" data-f0="14" data-f1="14" style="--h: 130vh">
+        <div class="outro-inner">
+          <p class="byline">Membrane <span class="dim">— a study by <span data-byline>Florian Kroker McCormack</span></span></p>
+          <p class="colophon">Built by hand in WebGL: a cell of 262&thinsp;144 points, a bilayer of <span data-v="lipids">10 000</span> lipids with proteins grown from their helices, a molecule for every ion, each on a path you can scroll backwards, and raymarched red cells, plant cells and membranes. Every number is computed from the model in <code>src/science</code>.</p>
+          <dl class="notes mono">
+            <div><dt>Source</dt><dd>Clark, Douglas &amp; Choi, <i>Biology 2e</i>, OpenStax (2018), chapters 4–5. CC BY 4.0. Figure and table numbers refer to it.</dd></div>
+            <div><dt>Red cells</dt><dd>Evans &amp; Fung (1972) biconcave profile; volume by Boyle–van ’t Hoff, b = 0.4; lysis at the constant-area sphere, ≈ 1.6 V₀.</dd></div>
+            <div><dt>Ions</dt><dd>Typical mammalian [Na⁺] 145 / 12 mM, [K⁺] 4 / 140 mM (out / in); Nernst at 37 °C; −70 mV resting potential.</dd></div>
+            <div><dt>Diffusion</dt><dd>t = x²/2D, D(O₂, water, 37 °C) = 3 × 10⁻⁹ m² s⁻¹. The molecules on screen are random walks, reflected by the bilayer unless they are lipid-soluble.</dd></div>
+            <div><dt>Not to scale</dt><dd>Ions and small molecules (drawn larger), the hero cell’s refraction (exaggerated), the cytoskeleton’s density, and time.</dd></div>
+          </dl>
+          <button class="replay mono" data-to="0">Back to the cell ↑</button>
+        </div>
+      </section>
+    </main>
+
+    <noscript><p class="noscript">This lesson is rendered live in WebGL and needs JavaScript.</p></noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
