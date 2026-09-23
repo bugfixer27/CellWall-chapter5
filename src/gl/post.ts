@@ -210,8 +210,9 @@ export function finalPass() {
       /* glsl */ `
       ${HASH}${NOISE}${TONE}
       uniform sampler2D uMap, uBloom;
-      uniform float uExposure, uBloomAmt, uTime, uPaper, uVignette, uGrain, uScrollVel, uFlash, uCA;
+      uniform float uExposure, uBloomAmt, uTime, uPaper, uVignette, uGrain, uScrollVel, uFlash, uCA, uSpotAmt;
       uniform vec2 uRes;
+      uniform vec3 uSpot;   // centre (uv) and radius (in screen heights) of what is being taught
       vec3 toSRGB(vec3 c){ return mix(c * 12.92, 1.055 * pow(c, vec3(1.0/2.4)) - 0.055, step(0.0031308, c)); }
 
       /* engraving: parallel hatch lines whose width follows density, a second
@@ -235,7 +236,24 @@ export function finalPass() {
         col.g = base.g;
         col.b = texture(uMap, uv + c * ca).b;
         vec3 bloom = texture(uBloom, uv).rgb;
-        col += bloom * uBloomAmt;
+        // spotlight: outside the subject the frame softens (a small disc blur) and dims
+        float out_ = 0.0;
+        if (uSpotAmt > 0.002) {
+          vec2 asp = vec2(uRes.x / uRes.y, 1.0);
+          float d = length((uv - uSpot.xy) * asp);
+          out_ = smoothstep(uSpot.z, uSpot.z * 1.7 + 0.05, d) * uSpotAmt;
+          if (out_ > 0.01) {
+            vec3 b = col;
+            float rpx = 5.0 * out_;
+            for (int i = 0; i < 8; i++) {
+              float a = float(i) * 0.785398 + 0.3;
+              b += texture(uMap, uv + vec2(cos(a), sin(a)) * rpx / uRes).rgb;
+            }
+            col = mix(col, b / 9.0, out_);
+          }
+        }
+        col += bloom * uBloomAmt * (1.0 - out_ * 0.5);
+        col *= 1.0 - out_ * 0.62;
         col *= uExposure;
         col += vec3(0.6, 0.7, 1.0) * uFlash * 0.03;
         vec3 mapped = aces(col);
@@ -272,6 +290,7 @@ export function finalPass() {
         uMap: { value: null }, uBloom: { value: null }, uExposure: { value: 1 }, uBloomAmt: { value: 0.7 },
         uTime: U.uTime, uPaper: U.uPaper, uVignette: { value: 0.5 }, uGrain: { value: 0.04 },
         uScrollVel: U.uScrollVel, uFlash: U.uFlash, uCA: { value: 0.012 }, uRes: U.uRes,
+        uSpot: { value: new THREE.Vector3(0.5, 0.5, 0.3) }, uSpotAmt: { value: 0 },
       },
     ),
   )

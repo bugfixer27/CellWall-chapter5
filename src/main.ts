@@ -9,6 +9,7 @@ import { buildType } from './dom/type'
 import { buildSieve } from './dom/sieve'
 import { buildCursor } from './dom/cursor'
 import { buildJunctions } from './dom/junctions'
+import { buildLesson } from './dom/lesson'
 
 /* Surface anything that escapes the render loop: a throw inside rAF would
    otherwise just freeze the film silently. */
@@ -63,6 +64,7 @@ async function boot() {
   }
   const choreo = buildChoreo(() => (engine ? engine.scaleText() : ''))
   const instruments = buildInstruments(engine)
+  const lesson = buildLesson(engine)
 
   let last = performance.now()
   gsap.ticker.add(() => {
@@ -74,6 +76,7 @@ async function boot() {
     frame?.(dt)
     choreo()
     instruments(dt)
+    lesson()
     labels?.()
     sieve(dt)
     cursor(dt)

@@ -226,7 +226,7 @@ a:focus-visible, button:focus-visible { outline: 1px solid var(--heat); outline-
   .hero-sub { font-size: 18px; }
 }
 
-@media (max-height: 820px) and (min-width: 901px) { .inst { zoom: 0.78; } .ch-title { font-size: clamp(40px, 5vw, 88px); } .beats { height: 40vh; } }
+
 
 @media (prefers-reduced-motion: reduce) {
   .cue i { animation: none; }
@@ -247,9 +247,9 @@ a:focus-visible, button:focus-visible { outline: 1px solid var(--heat); outline-
 /* endomembrane route */
 .route { list-style: none; display: grid; gap: 0; margin: 4px 0 14px; }
 .route li { display: flex; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--hair); color: var(--faint); text-transform: none; letter-spacing: 0.04em; transition: color 0.4s; }
-.route li i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; flex: none; transition: background 0.4s, box-shadow 0.4s; }
+.route li > i:first-child { width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; flex: none; transition: background 0.4s, box-shadow 0.4s; }
 .route li.on { color: var(--fg); }
-.route li.on i { background: var(--heat); border-color: var(--heat); box-shadow: 0 0 10px var(--heat); }
+.route li.on > i:first-child { background: var(--heat); border-color: var(--heat); box-shadow: 0 0 10px var(--heat); }
 .key-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
 
 /* fibres */
@@ -379,7 +379,128 @@ a:focus-visible, button:focus-visible { outline: 1px solid var(--heat); outline-
 
 @media (max-width: 900px) {
   .side-tag, .junctions { display: none; }
-  .summary { left: var(--gut); right: var(--gut); width: auto; top: 14vh; }
   .bento-4 { grid-template-columns: 1fr; }
   .beats { height: 44vh; }
 }
+
+
+/* ================================================================== LEGIBILITY
+   Sized for a 13-inch laptop (about 1280–1470 px wide, 720–900 px tall once the
+   browser takes its share). Nothing that teaches is smaller than 12 px. */
+.mono { font-size: 12px; letter-spacing: 0.1em; }
+.meta, .chap { font-size: 12px; }
+.rail-tick::after { font-size: 11.5px; }
+.ch-head { top: 76px; }
+.ch-title { font-size: clamp(44px, 5.6vw, 100px); }
+.beats { width: min(33vw, 500px); min-width: 340px; bottom: 7vh; height: 56vh; }
+.beat .eyebrow { font-size: 12px; margin-bottom: 12px; color: color-mix(in oklab, var(--fg) 66%, transparent); }
+.beat h3 { font-size: clamp(27px, 2.3vw, 40px); line-height: 1.06; margin-bottom: 14px; }
+.beat p { font-size: 18px; line-height: 1.5; max-width: 34ch; color: color-mix(in oklab, var(--fg) 90%, transparent); }
+.beat p + p { margin-top: 10px; }
+.beat .note, .beat p.note { font-size: 14.5px; line-height: 1.5; max-width: 40ch; color: color-mix(in oklab, var(--fg) 62%, transparent); }
+.beat b { font-weight: 600; }
+.sticky::before { width: 80vw; height: 100vh; opacity: 0.92; }
+
+/* key terms: they light up in reading order and point at what they name */
+.beat b.k { position: relative; color: var(--fg); background: linear-gradient(90deg, color-mix(in oklab, var(--heat) 38%, transparent), color-mix(in oklab, var(--heat) 38%, transparent)) no-repeat 0 88% / 0% 0.34em; transition: background-size 0.5s var(--ease), color 0.3s; cursor: help; }
+.beat b.k.seen { background-size: 100% 0.14em; }
+.beat b.k.on { background-size: 100% 0.34em; color: color-mix(in oklab, var(--heat) 50%, var(--fg)); }
+.paper-ch .beat b.k.on { color: var(--fg); }
+
+/* predict → reveal */
+.beat.predict { padding: 22px 22px 18px; border: 1px solid color-mix(in oklab, var(--warm) 55%, transparent); border-radius: 3px; background: color-mix(in oklab, var(--bg) 70%, transparent); backdrop-filter: blur(8px); }
+.beat.predict .eyebrow { color: var(--warm); }
+.beat.predict .eyebrow::before { content: '?'; display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 10px; border-radius: 50%; background: var(--warm); color: #111; font-weight: 700; letter-spacing: 0; }
+.beat.predict h3 { font-size: clamp(24px, 2vw, 34px); }
+.opts { list-style: none; display: grid; gap: 8px; margin: 6px 0 14px; text-transform: none; letter-spacing: 0.01em; font-size: 15px; }
+.opts li { display: flex; gap: 12px; align-items: baseline; color: var(--fg); }
+.opts li b { color: var(--warm); font-weight: 600; }
+.hint { color: var(--dim); }
+
+/* takeaways */
+.takeaway { position: absolute; right: calc(var(--gut) + 28px); top: 50%; transform: translateY(-50%); width: min(30vw, 440px); min-width: 300px; padding: 24px 24px 20px; border: 1px solid color-mix(in oklab, var(--heat) 40%, transparent); border-radius: 3px; background: color-mix(in oklab, var(--bg) 78%, transparent); backdrop-filter: blur(12px); opacity: 0; visibility: hidden; pointer-events: none; }
+.takeaway .tk-h { color: var(--heat); margin-bottom: 14px; }
+.takeaway ol { list-style: none; counter-reset: t; display: grid; gap: 14px; }
+.takeaway li { counter-increment: t; display: grid; grid-template-columns: 28px 1fr; font-size: 19px; line-height: 1.35; letter-spacing: -0.01em; font-weight: 450; }
+.takeaway li::before { content: counter(t); font-family: var(--mono); font-size: 13px; color: var(--heat); padding-top: 4px; }
+.takeaway li > span div { will-change: transform, opacity; }
+
+/* instruments */
+.inst { width: min(27vw, 380px); min-width: 290px; padding: 20px 20px 16px; max-height: calc(100vh - 190px); overflow: hidden; }
+.label, .inst .label { font-size: 12px; color: color-mix(in oklab, var(--fg) 70%, transparent); }
+.rows > div { padding: 8px 0; font-size: 12.5px; }
+.rows dt { color: color-mix(in oklab, var(--fg) 66%, transparent); }
+.small { font-size: 11.5px; line-height: 1.45; color: color-mix(in oklab, var(--fg) 60%, transparent); }
+.key { font-size: 12px; }
+.key-cols { gap: 7px 12px; }
+.route li { font-size: 13px; padding: 8px 0; }
+.fibre .n { font-size: 12.5px; }
+.fibre .r { font-size: 12px; }
+.fibre .d { font-size: 12px; }
+.history li { font-size: 12.5px; grid-template-columns: 56px 1fr; }
+.factors { font-size: 12.5px; }
+.steps li { font-size: 13px; padding: 7px 0; }
+.bigtag { font-size: 12.5px; }
+.ion .n { font-size: 12px; }
+.tonic { font-size: 13px; }
+.tonic th { font-size: 11.5px; }
+.chart text { font-size: 11px; letter-spacing: 0.04em; }
+.anatomy text { font-size: 11px; letter-spacing: 0.04em; }
+.utube text { font-size: 11px; letter-spacing: 0.04em; }
+.porters text { font-size: 10.5px; letter-spacing: 0.04em; }
+.junctions text { font-size: 13px; letter-spacing: 0.08em; }
+.junctions .t2 { font-size: 11.5px; }
+.side-tag { font-size: 12px; }
+.sieve-note, .sieve-eyebrow { font-size: 13px; }
+.sv-side { font-size: 13px; }
+
+/* in-place labels */
+.lab { font-size: 12.5px; letter-spacing: 0.08em; gap: 9px; transition: filter 0.3s; }
+.lab i { width: 7px; height: 7px; margin: 0 -3px; }
+.lab span { display: inline-flex; align-items: center; gap: 8px; padding: 5px 9px; background: color-mix(in oklab, var(--bg) 80%, transparent); }
+.lab em { font-style: normal; }
+.lab.l { flex-direction: row-reverse; }
+.lab.l span { border-left: 0; border-right: 1px solid var(--c, var(--heat)); }
+.lab span b { display: inline-grid; place-items: center; min-width: 20px; height: 20px; border-radius: 50%; background: var(--c, var(--heat)); color: #0b0c0f; font-size: 11.5px; font-weight: 700; letter-spacing: 0; }
+.lab.hot span { font-size: 14px; background: color-mix(in oklab, var(--bg) 90%, transparent); box-shadow: 0 0 0 1px var(--c, var(--heat)), 0 0 30px color-mix(in oklab, var(--c, var(--heat)) 45%, transparent); }
+.lab.hot i { box-shadow: 0 0 0 5px color-mix(in oklab, var(--c, var(--heat)) 30%, transparent), 0 0 18px var(--c, var(--heat)); animation: pulse 1.4s var(--ease) infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.6); } }
+
+/* the tonicity graph */
+.graph { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; opacity: 0; visibility: hidden; }
+.graph path { fill: none; }
+.g-ax { stroke: var(--fg); stroke-width: 1.5; }
+.g-grid { stroke: var(--hair); stroke-width: 1; }
+.g-iso { stroke: #59e1ff; stroke-width: 1.2; stroke-dasharray: 4 5; }
+.g-rbc { stroke: #ff5d73; stroke-width: 3; stroke-dasharray: 1 1; filter: drop-shadow(0 0 6px rgba(255, 93, 115, 0.6)); }
+.g-plant { stroke: #8dff7a; stroke-width: 3; stroke-dasharray: 1 1; filter: drop-shadow(0 0 6px rgba(141, 255, 122, 0.5)); }
+.g-lyse { stroke: #ff5d73; stroke-width: 2.5; }
+.graph text { font-family: var(--mono); font-size: 13px; fill: color-mix(in oklab, var(--fg) 75%, transparent); letter-spacing: 0.04em; }
+.graph .g-t { fill: var(--fg); font-size: 13.5px; }
+.graph .g-z { fill: color-mix(in oklab, var(--fg) 60%, transparent); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; }
+.graph .g-c { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
+
+/* the membrane map (paper) */
+.map { position: absolute; left: 0; top: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; opacity: 0; visibility: hidden; pointer-events: none; text-transform: none; letter-spacing: 0.01em; transform-origin: 0 0; }
+.map-col { position: relative; display: flex; flex-direction: column; gap: 10px; padding: 18px 16px 34px; border-left: 1.5px solid color-mix(in oklab, var(--c) 70%, var(--ink)); background: color-mix(in oklab, #ece7dc 30%, transparent); transition: background 0.5s var(--ease); }
+.map-col.c0 { --c: #0b7d96; } .map-col.c1 { --c: #b0206b; } .map-col.c2 { --c: #9a6400; }
+.map-col.on { background: color-mix(in oklab, color-mix(in oklab, var(--c) 16%, #ece7dc) 70%, transparent); }
+.map-col h4 { font-family: var(--sans); font-size: clamp(20px, 1.8vw, 28px); font-weight: 600; letter-spacing: -0.02em; color: var(--c); display: grid; gap: 4px; margin-bottom: 4px; }
+.map-col h4 span { font-family: var(--mono); font-size: 12px; font-weight: 450; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in oklab, var(--ink) 70%, transparent); }
+.map-col [data-row] { display: grid; gap: 3px; padding: 9px 0 0; border-top: 1px solid color-mix(in oklab, var(--ink) 18%, transparent); color: var(--ink); }
+.map-col [data-row] b { font-family: var(--sans); font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+.map-col [data-row] span { font-size: 13px; color: color-mix(in oklab, var(--ink) 75%, transparent); }
+.map-src { position: absolute; left: 0; top: -26px; font-size: 12px; color: color-mix(in oklab, var(--ink) 65%, transparent); }
+
+/* short laptop screens: less vertical room, same type size */
+@media (max-height: 820px) and (min-width: 901px) {
+  .ch-head { top: 66px; }
+  .ch-title { font-size: clamp(40px, 4.8vw, 84px); }
+  .beats { height: 58vh; bottom: 5vh; }
+  .beat h3 { font-size: clamp(25px, 2.1vw, 34px); }
+  .beat p { font-size: 17px; }
+  .beat .note, .beat p.note { font-size: 14px; }
+  .inst { top: 54%; max-height: calc(100vh - 150px); }
+  .utube.on { max-height: 200px; }
+}
+@media (max-width: 1100px) and (min-width: 901px) { .beats { width: 38vw; } .inst, .takeaway { width: 30vw; } }

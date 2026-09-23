@@ -92,3 +92,12 @@ export const ATP_DG = 50 // kJ mol⁻¹ available from ATP hydrolysis in a cell 
 
 /** ATP synthase (c₁₀ ring): 10 H⁺ per turn, 3 ATP per turn */
 export const SYNTHASE = { c: 10, atpPerTurn: 3 }
+
+/* ---- the landscape (§5.3): free energy of one ion outside vs inside ------- */
+/** glucose inside an absorbing gut or kidney cell, relative to outside (illustrative) */
+export const GLU_RATIO = 10
+/** kJ mol⁻¹ an ion gains by being outside rather than inside, at membrane potential vm (mV) */
+export const dGout = (out: number, inside: number, z: number, vm_mV: number) => -dGin(out, inside, z, vm_mV)
+/** free energy released by 2 Na⁺ entering (per glucose, SGLT1), and needed by glucose to enter 10× uphill */
+export const SYM_NA = 2 * -dGin(ION.Na.out, ION.Na.in, 1)
+export const SYM_GLU = ((R_GAS * T_BODY) / 1000) * Math.log(GLU_RATIO)

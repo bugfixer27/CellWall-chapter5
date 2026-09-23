@@ -5,7 +5,7 @@ import { film, band, smooth, CHAPTERS } from '../core/film'
 import { scroll, scrollToF } from '../core/scroll'
 
 type Beat = { el: HTMLElement; a: number; b: number; last: number }
-type Chapter = { n: number; beats: Beat[]; inst: HTMLElement | null; lastInst: number }
+type Chapter = { n: number; beats: Beat[]; inst: HTMLElement | null; lastInst: number; take: [number, number] | null }
 
 export function buildChoreo(scaleText: () => string) {
   const chapters: Chapter[] = []
@@ -16,7 +16,8 @@ export function buildChoreo(scaleText: () => string) {
       const [a, b] = el.dataset.at!.split(',').map(Number)
       beats.push({ el, a, b, last: -1 })
     })
-    chapters.push({ n, beats, inst: sec.querySelector('.inst'), lastInst: -1 })
+    const tk = sec.querySelector<HTMLElement>('[data-take]')
+    chapters.push({ n, beats, inst: sec.querySelector('.inst'), lastInst: -1, take: tk ? (tk.dataset.take!.split(',').map(Number) as [number, number]) : null })
   })
 
   const scaleEl = document.querySelector('[data-scale-bar]')
@@ -26,7 +27,6 @@ export function buildChoreo(scaleText: () => string) {
   const hero = document.querySelector<HTMLElement>('#hero .sticky')
   const megas = Array.from(document.querySelectorAll<HTMLElement>('.mega, .sv-line'))
   const junctions = document.querySelector<SVGElement>('[data-junctions]')
-  const summary = document.querySelector<HTMLElement>('[data-summary]')
   const root = document.documentElement
 
   const rail = document.querySelector('.rail-line')!
@@ -84,8 +84,14 @@ export function buildChoreo(scaleText: () => string) {
       }
       if (c.inst) {
         let al = band(-0.12, 0.04, 0.96, 1.08, u)
-        // the tonicity chapter hands the screen to its cells while they are close up
-        if (c.n === 9) al *= 1 - 0.85 * band(0.42, 0.45, 0.61, 0.64, u)
+        // the panel steps aside for the chapter's takeaway
+        if (c.take) al *= 1 - smooth(c.take[0] - 0.03, c.take[0], u)
+        // ... and wherever the scene itself becomes the diagram: the flow map, the cells up close and the graph
+        if (c.n === 1) al *= 1 - smooth(0.6, 0.64, u)
+        if (c.n === 9) al *= 1 - smooth(0.4, 0.43, u)
+        // the landscape needs the width; its labels carry the numbers
+        if (c.n === 10) al *= 1 - smooth(0.68, 0.71, u)
+        if (c.n === 11) al *= 1 - band(0.14, 0.17, 0.46, 0.5, u)
         const q = Math.round(al * 200) / 200
         if (q !== c.lastInst) {
           c.lastInst = q
@@ -118,11 +124,6 @@ export function buildChoreo(scaleText: () => string) {
       document.body.style.background = p > 0 ? `color-mix(in oklab, #ece7dc ${p * 100}%, #07080a)` : ''
     }
     if (junctions) junctions.style.opacity = band(2.5, 2.58, 2.84, 2.9, F).toFixed(3)
-    if (summary) {
-      const a = band(13.06, 13.12, 13.42, 13.5, F)
-      summary.style.opacity = a.toFixed(3)
-      summary.style.visibility = a < 0.01 ? 'hidden' : 'visible'
-    }
 
     skew += (Math.max(-1, Math.min(1, scroll.velN)) * -3 - skew) * 0.12
     const s = skew.toFixed(2)

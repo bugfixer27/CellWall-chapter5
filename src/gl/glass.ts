@@ -131,10 +131,11 @@ function tonicMat() {
   return sm(
     /* glsl */ `
     ${COMMON}
-    uniform float uMode, uFade;
-    uniform vec4 uCellA[3];   // RBC: V/V0, sphericity, crenation, lysis
+    uniform float uRbcA, uPlantA, uFade, uFlat, uG;
+    uniform vec4 uCellA[4];   // RBC: V/V0, sphericity, crenation, lysis
+    uniform vec4 uPos[4];     // RBC: centre, marker scale (0 = not drawn)
     uniform vec4 uPlant[3];   // plant: inset, roundness, turgor bulge, 0
-    uniform vec3 uX;          // centres along x
+    uniform vec4 uPPos[3];    // plant: centre, marker scale
 
     /* Evans–Fung red cell: half-thickness ½·R₀·√(1−ρ²)(C0 + C1ρ² + C2ρ⁴), R₀ = 3.91 µm,
        C0 = 0.207, C1 = 2.003, C2 = −1.123: 0.8 µm thick at the centre, 2.6 µm at the rim */
@@ -183,10 +184,13 @@ function tonicMat() {
       if (t < 0.0) return vec3(0.0);
       vec2 q0 = (ro + rd * t).xy;
       vec3 c = vec3(0.0);
-      float px = t * 0.0022;                       // about a pixel, in µm, at this distance
+      float px = t * 0.0022;                       // about a pixel, in µm, at this distance (per marker scale)
       for (int i = 0; i < 3; i++) {
         vec4 s = uPlant[i];
-        vec2 q = q0 - vec2(uX[i], 0.0);
+        float sc = uPPos[i].w;
+        if (sc < 0.01) continue;
+        vec2 q = (q0 - uPPos[i].xy) / sc;
+        px = t * 0.0022 / sc;
         vec2 B = BOX.xy * (1.0 + s.z * 0.035);
         float dw = sdRR(q, B, 0.8);
         // the wall: a thick band of cellulose
@@ -222,21 +226,23 @@ function tonicMat() {
       return c;
     }
 
+    /* each cell is tilted a little toward the camera, until the graph lays it flat */
+    vec3 orient(vec3 q){
+      q.yz = mat2(0.87, -0.5, 0.5, 0.87) * q.yz;
+      q.xy = mat2(0.98, -0.2, 0.2, 0.98) * q.xy;
+      return q;
+    }
+    vec3 local(vec3 p, int i){
+      vec3 q = (p - uPos[i].xyz) / uPos[i].w;
+      vec3 f = vec3(q.x, -q.z, q.y);                 // flat: the disc faces the camera
+      return mix(orient(q), f, uFlat);
+    }
     float scene(vec3 p, out int id, out int k){
       float d = 1e9; id = 0; k = 0;
-      for (int i = 0; i < 3; i++) {
-        vec3 q = p - vec3(uX[i], 0.0, 0.0);
-        if (uMode < 0.5) {
-          vec4 s = uCellA[i];
-          // tilt each cell a little toward the camera
-          q.yz = mat2(0.87, -0.5, 0.5, 0.87) * q.yz;
-          q.xy = mat2(0.98, -0.2, 0.2, 0.98) * q.xy;
-          float dc = sdRBC(q, s);
-          if (dc < d) { d = dc; id = 1; k = i; }
-        } else {
-          float dc = sdWall(q, uPlant[i]);
-          if (dc < d) { d = dc; id = 2; k = i; }
-        }
+      for (int i = 0; i < 4; i++) {
+        if (uPos[i].w < 0.01) continue;
+        float dc = sdRBC(local(p, i), uCellA[i]) * uPos[i].w;
+        if (dc < d) { d = dc; id = 1; k = i; }
       }
       return d;
     }
@@ -246,13 +252,10 @@ function tonicMat() {
     }
 
     /* inside a red cell: march to the far side, measuring the haemoglobin path */
-    float throughRBC(vec3 p, vec3 r, vec4 s, vec3 c, out vec3 q){
+    float throughRBC(vec3 p, vec3 r, vec4 s, int k, out vec3 q){
       float t = 0.02;
       for (int i = 0; i < 48; i++) {
-        vec3 x = p + r * t - c;
-        x.yz = mat2(0.87, -0.5, 0.5, 0.87) * x.yz;
-        x.xy = mat2(0.98, -0.2, 0.2, 0.98) * x.xy;
-        float d = -sdRBC(x, s);
+        float d = -sdRBC(local(p + r * t, k), s) * uPos[k].w;
         if (d < 0.004) break;
         t += max(d, 0.02);
       }
@@ -262,68 +265,67 @@ function tonicMat() {
 
     void main(){
       vec3 ro = uCamPos, rd = rayDir(vUv);
-      vec3 bgc = backdrop(rd, uMode < 0.5 ? 1.0 : 0.2);
+      vec3 bgc = backdrop(rd, mix(0.2, 1.0, uRbcA)) * (1.0 - 0.65 * uG);
       vec3 col = bgc;
       float t = 0.0;
       int id = 0, k = 0;
       bool hit = false;
       float glow = 0.0;
-      vec3 gcol = vec3(0.0);
-      for (int i = 0; i < 110; i++) {
-        vec3 p = ro + rd * t;
-        float d = scene(p, id, k);
-        if (uMode > 0.5) break;
-        if (d < 0.003) { hit = true; break; }
-        // near-misses glow: the membrane seen edge-on
-        glow += exp(-d * 6.0) * 0.012;
-        t += d * 0.8;
-        if (t > 80.0) break;
-      }
-      if (uMode > 0.5) {
-        col = bgc + plantSection(ro, rd);
-      } else {
-        vec3 memc = vec3(0.4, 0.8, 1.0);
-        col += memc * glow * 0.6;
-        if (hit) {
+      if (uRbcA > 0.01) {
+        for (int i = 0; i < 110; i++) {
           vec3 p = ro + rd * t;
-          vec3 n = nrm(p);
-          vec4 s = uCellA[k];
-          vec3 c = vec3(uX[k], 0.0, 0.0);
-          float cosi = clamp(-dot(rd, n), 0.0, 1.0);
-          float F = 0.03 + 0.97 * pow(1.0 - cosi, 5.0);
-          vec3 r1 = refract(rd, n, 1.0 / 1.39);
-          vec3 q;
-          float L = throughRBC(p, r1, s, c, q);
-          vec3 r2 = refract(r1, -nrm(q), 1.39);
-          if (dot(r2, r2) < 0.5) r2 = reflect(r1, -nrm(q));
-          // Beer–Lambert through haemoglobin; a lysed cell has lost it (a "ghost")
-          float hb = 1.0 - smoothstep(0.0, 0.6, s.w);
-          vec3 absorb = exp(-L * vec3(0.18, 1.35, 1.6) * hb * 1.4);
-          vec3 through = backdrop(r2, 1.0) * absorb * 2.2 + vec3(0.55, 0.05, 0.04) * (1.0 - absorb.g) * 0.35 * hb;
-          col = mix(through, env(reflect(rd, n)), F);
-          col += memc * pow(1.0 - cosi, 3.0) * 0.5;
-          col *= 1.0 - s.w * 0.6;
-        }
-        // escaping haemoglobin after lysis: a red haze spreading from the burst cell
-        for (int i = 0; i < 3; i++) {
-          float ly = uCellA[i].w;
-          if (ly < 0.01) continue;
-          vec3 c = vec3(uX[i], 0.0, 0.0);
-          float b2 = dot(c - ro, rd);
-          float dd = length(ro + rd * b2 - c);
-          float R = 3.4 + ly * 4.0;
-          float haze = exp(-pow(dd / R, 2.0)) * smoothstep(0.0, 0.25, ly) * (1.0 - smoothstep(0.6, 1.0, ly) * 0.6);
-          col += vec3(0.6, 0.03, 0.03) * haze * (0.35 + 0.15 * gnoise(vec3((ro + rd * b2) * 0.6 + uTime * 0.2)));
+          float d = scene(p, id, k);
+          if (d < 0.003) { hit = true; break; }
+          // near-misses glow: the membrane seen edge-on
+          glow += exp(-d * 6.0) * 0.012;
+          t += d * 0.8;
+          if (t > 120.0) break;
         }
       }
+      vec3 rbc = bgc;
+      vec3 memc = vec3(0.4, 0.8, 1.0);
+      rbc += memc * glow * 0.6;
+      if (hit) {
+        vec3 p = ro + rd * t;
+        vec3 n = nrm(p);
+        vec4 s = uCellA[k];
+        float cosi = clamp(-dot(rd, n), 0.0, 1.0);
+        float F = 0.03 + 0.97 * pow(1.0 - cosi, 5.0);
+        vec3 r1 = refract(rd, n, 1.0 / 1.39);
+        vec3 q;
+        float L = throughRBC(p, r1, s, k, q) / uPos[k].w;
+        vec3 r2 = refract(r1, -nrm(q), 1.39);
+        if (dot(r2, r2) < 0.5) r2 = reflect(r1, -nrm(q));
+        // Beer–Lambert through haemoglobin; a lysed cell has lost it (a "ghost")
+        float hb = 1.0 - smoothstep(0.0, 0.6, s.w);
+        vec3 absorb = exp(-L * vec3(0.18, 1.35, 1.6) * hb * 1.4);
+        vec3 through = backdrop(r2, 1.0) * absorb * 2.2 + vec3(0.55, 0.05, 0.04) * (1.0 - absorb.g) * 0.35 * hb;
+        rbc = mix(through, env(reflect(rd, n)), F);
+        rbc += memc * pow(1.0 - cosi, 3.0) * 0.5;
+        rbc *= 1.0 - s.w * 0.6;
+      }
+      // escaping haemoglobin after lysis: a red haze spreading from the burst cell
+      for (int i = 0; i < 4; i++) {
+        float ly = uCellA[i].w;
+        if (ly < 0.01 || uPos[i].w < 0.01) continue;
+        vec3 c = uPos[i].xyz;
+        float b2 = dot(c - ro, rd);
+        float dd = length(ro + rd * b2 - c) / uPos[i].w;
+        float R = 3.4 + ly * 4.0;
+        float haze = exp(-pow(dd / R, 2.0)) * smoothstep(0.0, 0.25, ly) * (1.0 - smoothstep(0.6, 1.0, ly) * 0.6);
+        rbc += vec3(0.6, 0.03, 0.03) * haze * (0.35 + 0.15 * gnoise(vec3((ro + rd * b2) * 0.6 + uTime * 0.2)));
+      }
+      col = mix(bgc, rbc, uRbcA);
+      if (uPlantA > 0.01) col += plantSection(ro, rd) * uPlantA;
       o = vec4(col * uFade, 0.0);
     }`,
     {
       uInvVP: { value: new THREE.Matrix4() }, uCamPos: { value: new THREE.Vector3() }, uRes: U.uRes, uTime: U.uTime,
-      uMode: { value: 0 }, uFade: { value: 1 },
-      uCellA: { value: [new THREE.Vector4(1, 0, 0, 0), new THREE.Vector4(1, 0, 0, 0), new THREE.Vector4(1, 0, 0, 0)] },
+      uRbcA: { value: 1 }, uPlantA: { value: 0 }, uFade: { value: 1 }, uFlat: { value: 0 }, uG: { value: 0 },
+      uCellA: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(1, 0, 0, 0)) },
+      uPos: { value: [new THREE.Vector4(-9, 0, 0, 1), new THREE.Vector4(0, 0, 0, 1), new THREE.Vector4(9, 0, 0, 1), new THREE.Vector4(0, 0, 0, 0)] },
       uPlant: { value: [new THREE.Vector4(), new THREE.Vector4(), new THREE.Vector4()] },
-      uX: { value: new THREE.Vector3(-9, 0, 9) },
+      uPPos: { value: [new THREE.Vector4(-9, 0, 0, 1), new THREE.Vector4(0, 0, 0, 1), new THREE.Vector4(9, 0, 0, 1)] },
     },
   )
 }

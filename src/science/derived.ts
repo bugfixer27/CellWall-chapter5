@@ -22,6 +22,8 @@ export function fillNumbers(lipids = 10000) {
     eK: sign(Math.round(S.E_K)),
     pumpWork: fmt(Math.round(S.PUMP_WORK)),
     atpDG: fmt(S.ATP_DG),
+    symNa: fmt(Math.round(S.SYM_NA)),
+    symGlu: fmt(Math.round(S.SYM_GLU)),
   }
   document.querySelectorAll<HTMLElement>('[data-v]').forEach((el) => {
     const k = el.dataset.v!

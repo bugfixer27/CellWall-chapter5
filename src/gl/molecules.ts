@@ -200,8 +200,8 @@ export const CARRIER_EVENTS: Ev[] = []
 
 /* 5.3 active transport: the gradient, and one full cycle of the Na⁺/K⁺ pump */
 const PUMP = V(2, 0, 20.45)
-export const PS0 = 10.3
-export const PSL = 0.55
+export const PS0 = 10.2
+export const PSL = 0.42
 const stepAt = (s: number) => PS0 + (s / 6) * PSL // F at pump step s
 const tauAtF = (F: number) => (F - 10.0) * 40
 {

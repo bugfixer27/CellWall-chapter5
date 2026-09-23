@@ -1,7 +1,7 @@
 /* The instruments: hairline panels whose readings come from the same model
    and the same molecules as the scene. */
 import { film, smooth, clamp01 } from '../core/film'
-import { COMPOSITION, FILAMENTS, HISTORY, ION, carrierFlux } from '../science/membrane'
+import { COMPOSITION, FILAMENTS, HISTORY, ION, V_REST, carrierFlux, dGin } from '../science/membrane'
 import type { Engine } from '../gl/engine'
 import { SP } from '../gl/molecules'
 import { SYN_W, SYN_T0 } from '../gl/proteins'
@@ -139,7 +139,7 @@ export function buildInstruments(engine: Engine | null) {
     svgEl('path', { d, class: 'ln', stroke: '#b77bff' }, fcc)
     svgEl('path', { d: `M${X0} ${Y0 - 0.82 * (Y0 - Y1)} L${X1} ${Y0 - 0.82 * (Y0 - Y1)}`, class: 'ax', 'stroke-dasharray': '2 3' }, fcc)
     svgEl('text', { x: X1, y: Y0 - 0.82 * (Y0 - Y1) - 5, 'text-anchor': 'end' }, fcc).textContent = 'Saturated'
-    svgEl('text', { x: X1 - 60, y: Y1 + 26, 'text-anchor': 'end', fill: '#ff4fa3' }, fcc).textContent = 'Channel · diffusion'
+    svgEl('text', { x: X0 + 78, y: Y0 - 10, 'text-anchor': 'start', fill: '#ff4fa3' }, fcc).textContent = 'Channel · simple diffusion'
     svgEl('text', { x: X1, y: Y0 - 0.66 * (Y0 - Y1), 'text-anchor': 'end', fill: '#b77bff' }, fcc).textContent = 'Carrier'
     svgEl('text', { x: X1, y: 164, 'text-anchor': 'end' }, fcc).textContent = 'Concentration gradient →'
     svgEl('text', { x: X0 + 4, y: Y1 + 2 }, fcc).textContent = 'Rate'
@@ -205,6 +205,10 @@ export function buildInstruments(engine: Engine | null) {
     pna: q('[data-pump="na"]'),
     pk: q('[data-pump="k"]'),
     patp: q('[data-pump="atp"]'),
+    dgna: q('[data-pump="dgna"]'),
+    dgk: q('[data-pump="dgk"]'),
+    vm: q('[data-pump="vm"]'),
+    copump: q('[data-co="pump"]'),
     cona: q('[data-co="na"]'),
     coglu: q('[data-co="glu"]'),
     coh: q('[data-co="h"]'),
@@ -219,8 +223,13 @@ export function buildInstruments(engine: Engine | null) {
     const ch = film.chapter
     const u = film.u
 
-    if (ch === 1) lit(R.route, (i) => (u < 0.33 ? i === 0 : u < 0.66 ? i <= Math.floor(((u - 0.33) / 0.33) * 5) && i >= 1 : i === 5 || i === 1 || i === 3))
-    if (ch === 4) histItems.forEach((e, i) => e.classList.toggle('on', u > 0.78 && i <= Math.floor(((u - 0.78) / 0.2) * 5)))
+    if (ch === 1) {
+      // the route lights up behind the ridden vesicle
+      const t = film.heroT
+      const at = u < 0.28 ? 0 : t < 0.02 ? 1 : t < 0.3 ? 2 : t < 0.5 ? 3 : t < 0.96 ? 4 : 5
+      lit(R.route, (i) => i <= at)
+    }
+    if (ch === 4) histItems.forEach((e, i) => e.classList.toggle('on', u > 0.78 && i <= Math.floor(((u - 0.78) / 0.11) * 5)))
     if (ch === 3) compRows.forEach((e, i) => (e.style.opacity = u > 0.74 ? '1' : i === 0 ? '1' : '0.35'))
     if (ch === 5) {
       setText(R.temp, `${Math.round(film.temp)} °C`)
@@ -249,10 +258,10 @@ export function buildInstruments(engine: Engine | null) {
       factors?.classList.toggle('on', u > 0.8)
     }
     if (ch === 8 && engine) {
-      const which = u < 0.3 ? ['Water through aquaporin', SP.H2O] : u < 0.66 ? ['K⁺ out through the channel', SP.K] : ['Glucose via the carrier', SP.GLU]
+      const which = u < 0.34 ? ['Water through aquaporin', SP.H2O] : u < 0.64 ? ['K⁺ out through the channel', SP.K] : ['Glucose via the carrier', SP.GLU]
       setText(R.facK, which[0] as string)
       setText(R.facV, String(engine.mol.crossed('fac', which[1] as number, film.tau)))
-      const c = smooth(0.66, 1, u)
+      const c = smooth(0.7, 0.92, u)
       if (facDot) {
         facDot.setAttribute('cx', (X0 + c * (X1 - X0)).toFixed(1))
         facDot.setAttribute('cy', (Y0 - carrierFlux(c, 0.82, 0.18) * (Y0 - Y1)).toFixed(1))
@@ -267,16 +276,11 @@ export function buildInstruments(engine: Engine | null) {
         lvlL.setAttribute('d', `M70 ${L} L110 ${L} L110 146 L150 146 L150 186 L96 186 Q70 186 70 160 Z`)
         lvlR.setAttribute('d', `M190 ${Rr} L230 ${Rr} L230 160 Q230 186 204 186 L150 186 L150 146 L190 146 Z`)
       }
-      const plants = film.tonicMode > 0.5
-      const st = engine.tonicState()
-      const names = plants ? ['Plasmolysed', 'Flaccid', 'Turgid'] : null
-      st.forEach((s, i) => {
-        const mos = plants ? [300 + 150 * film.tonic, 300, 300 - 200 * film.tonic][i] : s.mosm
-        setText(R.t['o' + i], String(Math.round(mos)))
-        setText(R.t['v' + i], plants ? (i === 0 ? `${Math.round(100 - film.tonic * 38)}%` : i === 2 ? 'wall-limited' : '100%') : s.lysis > 0.02 ? 'burst' : `${Math.round(s.V * 100)}%`)
-        const net = mos > 301 ? 'out ↑' : mos < 299 ? 'in ↓' : 'none'
-        setText(R.t['w' + i], net)
-        setText(R.t['s' + i], names ? (film.tonic > 0.3 ? names[i] : 'Normal') : s.lysis > 0.02 ? 'Lysed' : s.V > 1.02 ? 'Swelling' : s.V < 0.98 ? 'Crenated' : 'Normal')
+      engine.tonicState().slice(0, 3).forEach((s, i) => {
+        setText(R.t['o' + i], String(Math.round(s.mosm)))
+        setText(R.t['v' + i], s.lysis > 0.02 ? 'burst' : `${Math.round(s.V * 100)}%`)
+        setText(R.t['w' + i], s.mosm > 301 ? 'out ↑' : s.mosm < 299 ? 'in ↓' : 'none')
+        setText(R.t['s' + i], s.lysis > 0.02 ? 'Lysed' : s.V > 1.02 ? 'Swelling' : s.V < 0.98 ? 'Crenated' : 'Normal')
       })
     }
     if (ch === 10) {
@@ -288,10 +292,18 @@ export function buildInstruments(engine: Engine | null) {
       setText(R.pna, s >= 3 ? '3' : '0')
       setText(R.pk, s >= 6 ? '2' : '0')
       setText(R.patp, s >= 2 ? '1' : '0')
+      // the landscape switches the membrane potential on as a teaching step; the real cell always has it
+      const volt = F < 10.7 ? 1 : film.landVolt
+      const vm = V_REST * volt
+      const kj = (v: number) => `${v > 0 ? '+' : '−'}${Math.abs(v).toFixed(1)} kJ/mol`
+      setText(R.dgna, kj(dGin(ION.Na.out, ION.Na.in, 1, vm)))
+      setText(R.dgk, kj(dGin(ION.K.out, ION.K.in, 1, vm)))
+      setText(R.vm, `${Math.round(vm) === 0 ? '0' : '−' + Math.abs(Math.round(vm))} mV`)
     }
     if (ch === 11 && engine) {
       const tau = film.tau
-      const cyc = engine.mol.crossed('co', SP.GLU, tau)
+      const cyc = film.F < 11.21 ? 0 : engine.land.cotransported + (film.F > 11.42 ? 3 - engine.land.cotransported : 0)
+      setText(R.copump, String(film.F < 11.16 ? engine.land.pumped : 2))
       setText(R.cona, String(cyc * 2))
       setText(R.coglu, String(cyc))
       setText(R.coh, String(engine.mol.crossed('co', SP.H, tau)))

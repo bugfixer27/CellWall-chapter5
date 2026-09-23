@@ -5,12 +5,17 @@
    the instruments need. It is a pure function of F, so scrolling back
    reverses everything exactly.
 
-   Four sets, each with its own units:
+   Five sets, each with its own units:
      CELL   1 unit = 1 µm      a fluorescent animal cell (particles)
      MEM    1 unit = 1 nm      a patch of plasma membrane (instanced lipids)
      TONIC  1 unit = 1 µm      red blood cells and plant cells (raymarched)
      BULK   1 unit = 100 nm    the membrane bending: endo- and exocytosis
-   Sets hand over through a lens-portal: one scale opens inside the other.
+     LAND   free energy        the electrochemical gradient as terrain
+   Most sets hand over through a lens-portal: one scale opens inside the
+   other. Four hand-overs are morphs instead, where one picture turns into
+   the next: the cell flattens into a flow map, the red cells slide onto a
+   graph, the membrane tilts back into an energy landscape, and the whole
+   membrane unrolls into a map of every way across.
    ========================================================================== */
 
 import * as THREE from 'three'
@@ -33,7 +38,7 @@ export const CHAPTERS = [
 ]
 export const LAST = CHAPTERS.length // 14
 
-export type SetName = 'cell' | 'mem' | 'tonic' | 'bulk'
+export type SetName = 'cell' | 'mem' | 'tonic' | 'bulk' | 'land'
 
 /* ---------------------------------------------------------------- helpers */
 export const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x)
@@ -44,6 +49,12 @@ export const smooth = (a: number, b: number, x: number) => {
 export const band = (a: number, b: number, c: number, d: number, x: number) => smooth(a, b, x) * (1 - smooth(c, d, x))
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
+/* the landscape takes over from the membrane here, and hands it back here */
+export const LAND_IN = 10.7
+export const LAND_OUT = 11.5
+/* the diagram and map morphs */
+export const RIDE = [1.3, 1.6] as const // the camera rides one vesicle, ER → membrane
+
 /* ------------------------------------------------------------ set spans
    [from, to] in F, and which set is "outer" during each portal. */
 type Span = { set: SetName; a: number; b: number }
@@ -51,7 +62,9 @@ const SPANS: Span[] = [
   { set: 'cell', a: 0, b: 3.02 },
   { set: 'mem', a: 2.9, b: 9.42 },
   { set: 'tonic', a: 9.3, b: 10.1 },
-  { set: 'mem', a: 10.0, b: 12.03 },
+  { set: 'mem', a: 10.0, b: LAND_IN },
+  { set: 'land', a: LAND_IN, b: LAND_OUT },
+  { set: 'mem', a: LAND_OUT, b: 12.03 },
   { set: 'bulk', a: 11.9, b: 13.06 },
   { set: 'cell', a: 12.96, b: 14.01 },
 ]
@@ -64,6 +77,16 @@ const PORTALS: [number, number][] = [
   [12.96, 13.06],
 ]
 
+/* ----------------------------------------------------------- morph layouts */
+/** the flow map: centre of the flattened cell, in µm (cell set) */
+export const DIAG = { x: 8.2, y: -1.6 }
+/** the unrolled membrane: centre and scale of the map (cell set) */
+export const MAP = { x: 4, y: -2.5, s: 0.62, cx: -5.6, cy: -0.6, cz: 59.6 }
+/** the tonicity graph: camera distance (tonic set) */
+export const GRAPH = { cz: 64 }
+/** the landscape: the membrane's picture is L tall, seen from D (land set) */
+export const LAND = { L: 40, D: 20 / Math.tan((19 * Math.PI) / 180) }
+
 /* ----------------------------------------------------------- camera paths */
 type Key = { f: number; p: [number, number, number]; t: [number, number, number]; fov: number }
 const CAM: Record<SetName, Key[]> = {
@@ -71,16 +94,27 @@ const CAM: Record<SetName, Key[]> = {
     { f: 0.0, p: [0, 0, 36], t: [0, 0, 0], fov: 34 },
     { f: 0.5, p: [0, 0, 35], t: [0, 0, 0], fov: 34 },
     { f: 0.95, p: [14, 8, 30], t: [0, 0, 0], fov: 38 },
-    { f: 1.3, p: [10, 4, 22], t: [1, 0.5, 0], fov: 40 },
-    { f: 1.62, p: [-4, 7, 17], t: [2.5, 1.5, 0], fov: 42 },
-    { f: 1.95, p: [-15, -3, 20], t: [0, 0, 0], fov: 40 },
+    { f: 1.12, p: [10, 4, 23], t: [1, 0.5, 0], fov: 40 },
+    // (1.3 → 1.6 the camera rides a vesicle: see engine.placeCam)
+    { f: 1.28, p: [-1, 7, 18], t: [2, 1.5, 0], fov: 42 },
+    { f: 1.66, p: [9, 2, 22], t: [6, 0, 0], fov: 40 },
+    // the flow map: the cell lies flat, face on
+    { f: 1.745, p: [DIAG.x - 3.6, DIAG.y + 0.8, 30], t: [DIAG.x - 3.6, DIAG.y + 0.8, 0], fov: 36 },
+    { f: 1.9, p: [DIAG.x - 3.6, DIAG.y + 0.8, 30], t: [DIAG.x - 3.6, DIAG.y + 0.8, 0], fov: 36 },
+    { f: 2.0, p: [-12, -2, 24], t: [0, 0, 0], fov: 40 },
     { f: 2.3, p: [-6, -14, 21], t: [0, -1, 0], fov: 42 },
     { f: 2.6, p: [16, -4, 24], t: [0, 0, 0], fov: 40 },
     { f: 2.86, p: [9, 2, 16], t: [8.5, 1.6, 2.8], fov: 44 },
     { f: 3.02, p: [9.3, 1.9, 4.6], t: [9.6, 1.9, 3.2], fov: 60 },
     { f: 12.96, p: [9.3, 1.9, 4.6], t: [9.6, 1.9, 3.2], fov: 60 },
     { f: 13.07, p: [0, 0, 38], t: [0, 0, 0], fov: 36 },
-    { f: 13.5, p: [-18, 6, 30], t: [0, 0, 0], fov: 38 },
+    { f: 13.18, p: [-13, 6, 30], t: [0, 0, 0], fov: 38 },
+    { f: 13.235, p: [-20, 16, 28], t: [0, 0, 0], fov: 38 },
+    { f: 13.29, p: [-26, 10, 34], t: [0, -1, 0], fov: 40 },
+    // the unrolled membrane: a map
+    { f: 13.34, p: [MAP.cx, MAP.cy, MAP.cz], t: [MAP.cx, MAP.cy, 0], fov: 36 },
+    { f: 13.62, p: [MAP.cx, MAP.cy, MAP.cz], t: [MAP.cx, MAP.cy, 0], fov: 36 },
+    { f: 13.74, p: [0, 0, 38], t: [0, 0, 0], fov: 36 },
     { f: 13.95, p: [0, 0, 36], t: [0, 0, 0], fov: 34 },
     { f: 14.0, p: [0, 0, 36], t: [0, 0, 0], fov: 34 },
   ],
@@ -111,12 +145,13 @@ const CAM: Record<SetName, Key[]> = {
     { f: 9.1, p: [0, 1, 70], t: [0, 0, 16], fov: 38 },
     { f: 9.42, p: [0, 1, 70], t: [0, 0, 16], fov: 38 },
     { f: 10.0, p: [0, 1, 70], t: [0, 0, 16], fov: 38 },
-    { f: 10.12, p: [0, 1, 74], t: [0, 0, 14], fov: 38 },
-    { f: 10.3, p: [1, -1, 52], t: [3, -2, 20], fov: 40 },
-    { f: 10.9, p: [5, -1, 48], t: [3, -2.5, 20], fov: 40 },
-    { f: 11.15, p: [-9, 1, 54], t: [-7, -0.5, 20], fov: 38 },
-    { f: 11.45, p: [-7, 0, 52], t: [-7, -0.5, 20], fov: 38 },
-    { f: 11.6, p: [20, -6, 56], t: [15, -4.5, 18], fov: 40 },
+    { f: 10.1, p: [0, 1, 72], t: [0, 0, 15], fov: 38 },
+    { f: 10.2, p: [1, -1, 50], t: [3, -2, 20], fov: 40 },
+    { f: 10.62, p: [5, -1, 47], t: [3, -2.5, 20], fov: 40 },
+    // side on, membrane level across the middle: the picture that tilts back into the landscape
+    { f: LAND_IN, p: [3, 0, 60], t: [3, 0, 20.3], fov: 38 },
+    { f: LAND_OUT, p: [15, 0, 58], t: [15, 0, 18], fov: 38 },
+    { f: 11.62, p: [20, -6, 56], t: [15, -4.5, 18], fov: 40 },
     { f: 11.9, p: [18, -5, 52], t: [15, -4.5, 18], fov: 40 },
     { f: 12.03, p: [15, -4, 34], t: [15, -4, 18], fov: 50 },
   ],
@@ -125,13 +160,16 @@ const CAM: Record<SetName, Key[]> = {
     { f: 9.4, p: [0, 3, 38], t: [0, 0, 0], fov: 40 },
     { f: 9.45, p: [-5.5, 3, 15], t: [-10.5, 0, 0], fov: 40 },
     { f: 9.5, p: [-5.5, 2.5, 14], t: [-10.5, 0, 0], fov: 40 },
-    { f: 9.54, p: [12.5, 3, 15], t: [7.5, 0, 0], fov: 40 },
+    { f: 9.545, p: [12.5, 3, 15], t: [7.5, 0, 0], fov: 40 },
     { f: 9.62, p: [12.5, 2.5, 14.5], t: [7.5, 0, 0], fov: 40 },
-    { f: 9.68, p: [0, 4, 38], t: [0, 0, 0], fov: 40 },
-    { f: 9.73, p: [0, 4.5, 37], t: [0, 0, 0], fov: 40 },
-    { f: 9.8, p: [0, 5, 36], t: [0, 0, 0], fov: 40 },
-    { f: 9.9, p: [0, 4, 33], t: [0, 0, 0], fov: 40 },
-    { f: 10.1, p: [0, 3, 30], t: [0, 0, 0], fov: 40 },
+    { f: 9.66, p: [0, 4, 38], t: [0, 0, 0], fov: 40 },
+    { f: 9.69, p: [0, 4.5, 37], t: [0, 0, 0], fov: 40 },
+    // the graph: straight on
+    { f: 9.745, p: [0, 0, GRAPH.cz], t: [0, 0, 0], fov: 40 },
+    { f: 9.84, p: [0, 0, GRAPH.cz], t: [0, 0, 0], fov: 40 },
+    { f: 9.89, p: [-4.5, 5, 33], t: [-4.5, 0, 0], fov: 40 },
+    { f: 9.95, p: [-4.5, 4, 31.5], t: [-4.5, 0, 0], fov: 40 },
+    { f: 10.1, p: [-4.5, 3, 32], t: [-4.5, 0, 0], fov: 40 },
   ],
   bulk: [
     { f: 11.9, p: [0, 14, 40], t: [0, 1, 0], fov: 40 },
@@ -143,6 +181,19 @@ const CAM: Record<SetName, Key[]> = {
     { f: 12.78, p: [34, 1.8, 6], t: [34, -0.4, 0], fov: 40 },
     { f: 12.84, p: [46, 1.4, 4.2], t: [46, 0.1, 0], fov: 40 },
     { f: 13.06, p: [46, 1.2, 3.8], t: [46, 0.2, 0], fov: 40 },
+  ],
+  /* the landscape: it starts as the membrane's picture standing upright,
+     filling the frame exactly as the membrane did, and ends the same way */
+  land: [
+    { f: LAND_IN, p: [0, LAND.L / 2, LAND.D], t: [0, LAND.L / 2, 0], fov: 38 },
+    { f: 10.745, p: [-14, 40, 50], t: [-3, 6, -16], fov: 38 },
+    { f: 10.785, p: [-44, 34, 30], t: [-6, 4, -23], fov: 36 },
+    { f: 10.9, p: [-45, 32, 28], t: [-4, 4, -21], fov: 36 },
+    { f: 11.02, p: [-42, 34, 30], t: [-4, 4, -23], fov: 36 },
+    { f: 11.2, p: [-36, 36, 36], t: [-2, 4, -22], fov: 36 },
+    { f: 11.42, p: [-38, 36, 34], t: [-3, 5, -22], fov: 36 },
+    { f: 11.465, p: [-10, 38, 50], t: [-2, 10, -10], fov: 38 },
+    { f: LAND_OUT, p: [0, LAND.L / 2, LAND.D], t: [0, LAND.L / 2, 0], fov: 38 },
   ],
 }
 
@@ -196,6 +247,13 @@ export const film = {
   vesicles: 0, // endomembrane traffic highlighted
   memGlow: 0.4, // plasma membrane highlight
   finalGlass: 0,
+  heroT: 0, // the ridden vesicle: 0 at the ER exit site, 1 fused with the plasma membrane
+  heroOn: 0,
+  ride: 0, // how much the camera follows it
+  fuse: 0, // the fusion ripple, 0..1
+  dmap: 0, // the cell flattened into the flow map, 0..1
+  live: 0, // the whole cell eating, drinking and secreting at once
+  peel: 0, // the plasma membrane unrolled into a map, 0..1
 
   /* ---- membrane set ---- */
   lipidState: 0, // 0 bilayer · 1 scattered · 2 micelles & liposome · 3 bilayer again
@@ -219,11 +277,23 @@ export const film = {
   memDim: 0,
 
   /* ---- tonicity ---- */
-  tonicMode: 0, // 0 red cells, 1 plant cells
-  tonic: 0, // how far the solutions have acted, 0..1
-  tonicFade: 1,
+  tonic: 0, // plant close-up: how far the solutions have acted, 0..1
   tonicH: 0,
   tonicO: 0,
+  tonicG: 0, // the cells laid out on the graph, 0..1
+  rider: 0, // the fourth red cell's ride down the curve, 0..1
+  riderOn: 0,
+  rbcA: 1,
+  plantA: 0,
+
+  /* ---- the landscape ---- */
+  landTilt: 0, // the membrane's picture tips back to become the ground
+  landRise: 0, // the ground rises into the free-energy terrain
+  landVolt: 0, // the membrane potential switched on
+  landLeak: 0, // ions rolling downhill through channels
+  landPump: 0, // the pump lifting ions uphill
+  landCo: 0, // the second lane becomes glucose
+  landCoRun: 0, // Na⁺ rolling down pays glucose up
 
   /* ---- bulk ---- */
   phago: 0,
@@ -252,28 +322,43 @@ export function updateFilm(F: number) {
   f.inner = on.length > 1 ? on[1].set : null
   f.portal = 0
   for (const [a, b] of PORTALS) if (F >= a && F <= b) f.portal = smooth(a, b, F)
-  if (!f.inner) f.portal = 0
+  if (!f.inner || f.portal === 0) ((f.inner = null), (f.portal = 0))
 
   /* ---- hero & cell ---- */
   f.heroGlass = 1 - smooth(0.5, 0.68, F)
   f.heroType = 1 - smooth(0.42, 0.62, F)
   f.assemble = smooth(0.5, 0.98, F)
-  f.finalGlass = smooth(13.78, 13.96, F)
-  f.organelles = 1 - 0.8 * band(2.0, 2.12, 2.9, 3.0, F)
-  f.cyto = 0.12 + 0.88 * band(2.0, 2.12, 2.52, 2.62, F) + 0.25 * band(2.52, 2.6, 2.9, 3.0, F)
-  f.vesicles = band(1.33, 1.42, 1.95, 2.05, F)
-  f.memGlow = 0.45 + 0.55 * smooth(2.75, 2.95, F) + 0.5 * band(13.05, 13.3, 13.7, 13.9, F)
+  f.finalGlass = smooth(13.8, 13.96, F)
+  const peelFade = band(13.2, 13.28, 13.64, 13.72, F)
+  f.organelles = (1 - 0.8 * band(2.0, 2.12, 2.9, 3.0, F)) * (1 - 0.94 * peelFade)
+  f.cyto = (0.12 + 0.88 * band(2.0, 2.12, 2.52, 2.62, F) + 0.25 * band(2.52, 2.6, 2.9, 3.0, F)) * (1 - peelFade)
+  f.vesicles = band(1.26, 1.32, 1.62, 1.68, F) + 0.8 * band(13.04, 13.08, 13.2, 13.24, F)
+  f.memGlow = 0.45 + 0.9 * band(1.5, 1.57, 1.64, 1.7, F) + 0.55 * smooth(2.75, 2.95, F) + 1.4 * band(13.2, 13.28, 13.64, 13.72, F) + 0.4 * band(13.04, 13.08, 13.2, 13.26, F) + 0.5 * band(13.74, 13.8, 13.9, 13.96, F)
+  // the ride: ER exit (0) → cis Golgi (0.3) → trans (0.5) → plasma membrane (0.97) → fused (1)
+  f.heroT = clamp01((F - RIDE[0]) / (RIDE[1] - RIDE[0]))
+  f.heroOn = band(1.24, 1.29, 1.64, 1.68, F)
+  f.ride = band(1.27, 1.33, 1.6, 1.665, F)
+  f.fuse = smooth(RIDE[1] - 0.008, 1.665, F)
+  f.dmap = smooth(1.645, 1.745, F) * (1 - smooth(1.905, 1.99, F))
+  f.live = band(13.04, 13.08, 13.2, 13.26, F)
+  f.peel = smooth(13.2, 13.34, F) * (1 - smooth(13.62, 13.745, F))
 
-  /* ---- paper plates: junctions, phospholipids, osmosis, the summary ---- */
-  f.paper = Math.max(band(2.5, 2.58, 2.84, 2.9, F), band(4.04, 4.12, 4.9, 4.97, F), band(9.02, 9.08, 9.24, 9.3, F), band(13.06, 13.12, 13.42, 13.5, F))
+  /* ---- paper: the flow map, junctions, phospholipids, osmosis, the membrane map ---- */
+  f.paper = Math.max(
+    band(1.7, 1.76, 1.9, 1.95, F),
+    band(2.5, 2.58, 2.84, 2.9, F),
+    band(4.04, 4.12, 4.9, 4.97, F),
+    band(9.02, 9.08, 9.24, 9.3, F),
+    band(13.27, 13.33, 13.62, 13.68, F),
+  )
 
   /* ---- membrane ---- */
   // self-assembly: bilayer → scattered → micelles/liposome → bilayer
-  f.lipidState = F < 4.3 ? 0 : F < 4.44 ? smooth(4.3, 4.44, F) : F < 4.56 ? 1 + smooth(4.48, 4.62, F) : F < 4.8 ? 1 + smooth(4.48, 4.62, F) : 2 + smooth(4.8, 4.93, F)
+  f.lipidState = F < 4.3 ? 0 : F < 4.44 ? smooth(4.3, 4.44, F) : F < 4.8 ? 1 + smooth(4.5, 4.64, F) : 2 + smooth(4.8, 4.93, F)
   f.solo = band(4.04, 4.1, 4.26, 4.32, F)
-  // temperature: 37 → 5 → 37 → 42, the cholesterol beat
-  f.temp = F < 5.25 ? 37 : F < 5.5 ? lerp(37, 4, smooth(5.25, 5.45, F)) : F < 5.7 ? lerp(4, 37, smooth(5.55, 5.68, F)) : 37
-  f.unsatHi = band(5.25, 5.32, 5.55, 5.62, F)
+  // temperature: 37 → 4 → 37, the saturated/unsaturated beat, then cholesterol
+  f.temp = F < 5.28 ? 37 : F < 5.55 ? lerp(37, 4, smooth(5.28, 5.46, F)) : F < 5.7 ? lerp(4, 37, smooth(5.56, 5.68, F)) : 37
+  f.unsatHi = band(5.28, 5.34, 5.55, 5.62, F)
   f.cholHi = band(5.75, 5.8, 5.95, 5.99, F)
   f.cholesterol = 1
   f.protHi = band(6.3, 6.35, 6.46, 6.5, F)
@@ -302,19 +387,30 @@ export function updateFilm(F: number) {
     f.tau = (F - 11.0) * 40
   } else f.mol = 'none'
 
-  f.gate = band(8.3, 8.36, 8.62, 8.68, F)
-  // the carrier rocks: open-out while loading, open-in while releasing
+  f.gate = band(8.36, 8.42, 8.62, 8.68, F)
   f.rock = 0
-  // Na⁺/K⁺ pump: six steps across 10.3 → 10.85
-  f.pumpStep = clamp01((F - 10.3) / 0.55) * 6
-  f.synthase = smooth(11.55, 11.62, F)
+  // Na⁺/K⁺ pump: six steps across 10.2 → 10.62
+  f.pumpStep = clamp01((F - 10.2) / 0.42) * 6
+  f.synthase = smooth(11.56, 11.62, F)
 
   /* ---- tonicity ---- */
-  f.tonicMode = F < 9.732 ? 0 : 1
   f.tonicH = smooth(9.43, 9.5, F)
-  f.tonicO = smooth(9.53, 9.615, F)
-  f.tonic = smooth(9.76, 9.85, F)
-  f.tonicFade = 1 - band(9.712, 9.728, 9.736, 9.752, F)
+  f.tonicO = smooth(9.545, 9.615, F)
+  f.tonicG = smooth(9.685, 9.745, F) * (1 - smooth(9.84, 9.885, F))
+  f.rider = smooth(9.745, 9.79, F)
+  f.riderOn = band(9.715, 9.745, 9.84, 9.86, F)
+  f.rbcA = 1 - smooth(9.845, 9.87, F)
+  f.plantA = smooth(9.795, 9.82, F)
+  f.tonic = smooth(9.885, 9.93, F)
+
+  /* ---- the landscape ---- */
+  f.landTilt = smooth(LAND_IN, 10.745, F) * (1 - smooth(11.455, LAND_OUT, F))
+  f.landRise = smooth(10.735, 10.785, F) * (1 - smooth(11.42, 11.465, F))
+  f.landVolt = smooth(10.815, 10.87, F)
+  f.landLeak = band(10.79, 10.8, 11.0, 11.02, F)
+  f.landPump = band(11.0, 11.02, 11.15, 11.17, F)
+  f.landCo = smooth(11.165, 11.21, F)
+  f.landCoRun = band(11.2, 11.225, 11.4, 11.42, F)
 
   /* ---- bulk ---- */
   f.phago = smooth(12.06, 12.26, F)
@@ -326,9 +422,9 @@ export function updateFilm(F: number) {
 
   /* ---- grade ---- */
   f.exposure = 1 - f.memDim * 0.4
-  f.vignette = 0.45 + (f.outer === 'bulk' ? 0.15 : 0)
+  f.vignette = 0.45 + (f.outer === 'bulk' ? 0.15 : 0) + (f.outer === 'land' ? 0.1 * f.landRise : 0)
   return f
 }
 
 /* the scale readout: world units → metres, per set */
-export const UNIT_M: Record<SetName, number> = { cell: 1e-6, mem: 1e-9, tonic: 1e-6, bulk: 1e-7 }
+export const UNIT_M: Record<SetName, number> = { cell: 1e-6, mem: 1e-9, tonic: 1e-6, bulk: 1e-7, land: 0 }

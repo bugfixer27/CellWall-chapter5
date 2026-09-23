@@ -1,15 +1,16 @@
 import * as THREE from 'three'
-import { film, updateFilm, camAt, type SetName, UNIT_M, smooth, band } from '../core/film'
+import { film, updateFilm, camAt, type SetName, UNIT_M, smooth, band, LAND_IN, LAND_OUT } from '../core/film'
 import { scroll } from '../core/scroll'
 import { U } from './uniforms'
-import { buildCell } from './cell'
+import { buildCell, heroAt, ANCHORS } from './cell'
 import { buildBilayer } from './bilayer'
 import { buildProteins } from './proteins'
 import { Molecules } from './molecules'
 import { Glass } from './glass'
 import { Bloom, finalPass, portalPass, rt } from './post'
 import { Plates, SHOTS } from './plates'
-import { rbcVolume, RBC_LYSE, ISO_MOSM } from '../science/membrane'
+import { Land } from './land'
+import { rbcMarks, plantMarks } from '../core/graph'
 
 /* ==========================================================================
    THE RENDER GRAPH (one frame)
@@ -17,6 +18,8 @@ import { rbcVolume, RBC_LYSE, ISO_MOSM } from '../science/membrane'
                           mem:  lipids, cholesterol, sugars, proteins, molecules
                           tonic / bulk: raymarched in one pass
      inner set → M        only while a portal is open
+                          (the landscape also borrows M for the membrane's
+                          picture while it tilts back into terrain)
      portal    A, M → C   the next scale opens inside a lens
      plates               DOM-mirrored stills
      bloom + grade        → screen (engraving when the page turns to paper)
@@ -80,6 +83,10 @@ export class Engine {
   bil = buildBilayer()
   prot = buildProteins()
   mol = new Molecules()
+  land = new Land()
+  /** the spotlight, in screen px, set by the labels each frame and eased here */
+  spot = { x: 0, y: 0, r: 300, amt: 0 }
+  private spotE = { x: 0, y: 0, r: 300, amt: 0 }
 
   mouse = new THREE.Vector2()
   mouseT = new THREE.Vector2()
@@ -142,11 +149,12 @@ export class Engine {
       r.compileAsync(this.cellScene, this.camA).catch(() => {}),
       r.compileAsync(this.memScene, this.camA).catch(() => {}),
       r.compileAsync(this.plates.scene, this.plates.cam).catch(() => {}),
+      r.compileAsync(this.land.scene, this.camA).catch(() => {}),
       ...fs.map((f) => r.compileAsync(f.scene, f.cam).catch(() => {})),
     ])
     // prime every set once, so nothing compiles or uploads mid-scroll
     const F0 = film.F
-    for (const F of [0.2, 5.5, 9.5, 12.3]) {
+    for (const F of [0.2, 1.8, 5.5, 9.5, 9.78, 10.9, 12.3, 13.3]) {
       updateFilm(F)
       this.renderSet(film.outer, this.camA, this.A, 0)
     }
@@ -159,13 +167,33 @@ export class Engine {
 
   /* ---- place a camera on a set's path at film time F ---- */
   private _t = new THREE.Vector3()
-  placeCam(cam: THREE.PerspectiveCamera, set: SetName, F: number, parallax = true) {
+  private _h = new THREE.Vector3()
+  private _h2 = new THREE.Vector3()
+  placeCam(cam: THREE.PerspectiveCamera, set: SetName, F: number, parallax = 1) {
     cam.fov = camAt(set, F, cam.position, this._t)
+    // the ride: follow one vesicle out of the ER, through the Golgi, to the surface
+    if (set === 'cell' && film.ride > 0.001) {
+      const t = film.heroT
+      heroAt(t, this._h)
+      heroAt(Math.min(1, t + 0.03), this._h2)
+      const d = this._h2.clone().sub(this._h)
+      if (d.lengthSq() < 1e-6) d.set(1, 0, 0)
+      d.normalize()
+      const side = new THREE.Vector3().crossVectors(d, new THREE.Vector3(0, 1, 0)).normalize()
+      const pos = this._h.clone().addScaledVector(d, -2.6).addScaledVector(side, 0.9).add(new THREE.Vector3(0, 0.8, 0))
+      const tgt = this._h.clone().addScaledVector(d, 0.8)
+      const w = film.ride * film.ride * (3 - 2 * film.ride)
+      cam.position.lerp(pos, w)
+      this._t.lerp(tgt, w)
+      cam.fov += (58 - cam.fov) * w
+    }
+    // the landscape begins as a picture filling the frame: no parallax until it tilts
+    if (set === 'land') parallax *= film.landTilt
     cam.up.set(0, 1, 0)
     cam.lookAt(this._t)
-    if (parallax) {
+    if (parallax > 0) {
       const d = cam.position.distanceTo(this._t)
-      const k = d * 0.02 * (1 - film.paper * 0.8)
+      const k = d * 0.02 * (1 - film.paper * 0.8) * parallax * (1 - film.ride)
       cam.updateMatrixWorld()
       cam.position.addScaledVector(new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0), this.parallax.x * k)
       cam.position.addScaledVector(new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1), this.parallax.y * k * 0.6)
@@ -188,6 +216,12 @@ export class Engine {
     cu.uFocus.value = cam.position.distanceTo(tgt)
     cu.uPx.value = this.dpr * (this.h / 900)
     cu.uAlpha.value = 1 - f.finalGlass * 0.15
+    cu.uHeroT.value = f.heroT
+    cu.uHeroOn.value = f.heroOn
+    cu.uFuse.value = f.fuse
+    cu.uMap.value = f.dmap
+    cu.uPeel.value = f.peel
+    cu.uLive.value = f.live
     this.head.mat.uniforms.uAmt.value = f.heroType
     this.head.mesh.visible = f.heroType > 0.001
 
@@ -203,16 +237,9 @@ export class Engine {
     bu.uProt.value.forEach((v, i) => v.copy(this.prot.footprints[i]))
   }
 
-  /* tonicity: each cell's state is computed from Boyle–van 't Hoff */
+  /* tonicity: each red cell's state from Boyle–van 't Hoff, and where it sits (row or graph) */
   tonicState() {
-    const out = [ISO_MOSM + 150 * film.tonicH, ISO_MOSM, ISO_MOSM - 200 * film.tonicO] // hypertonic · isotonic · hypotonic
-    return out.map((mosm) => {
-      const V = rbcVolume(mosm)
-      const sph = smooth(1.0, RBC_LYSE, V)
-      const cren = smooth(1.0, 0.8, V)
-      const lysis = V >= RBC_LYSE ? smooth(0, 0.35, (V - RBC_LYSE) / 0.6) : 0
-      return { mosm, V, sph, cren, lysis }
-    })
+    return rbcMarks(this.camA.aspect)
   }
 
   /* ---- render one set into a target; returns the target holding the image ---- */
@@ -247,17 +274,39 @@ export class Engine {
       const g = this.glass.tonic
       this.glass.setCam(g, cam)
       const u = g.mat.uniforms
-      u.uMode.value = f.tonicMode
-      u.uFade.value = f.tonicFade
-      const st = this.tonicState()
-      st.forEach((s, i) => {
-        u.uCellA.value[i].set(s.V, s.sph, s.cren, s.lysis)
-        // plant cells: hypertonic plasmolyses, isotonic is flaccid, hypotonic is turgid
-        const plas = i === 0 ? f.tonic : 0
-        const turg = i === 2 ? f.tonic : 0
+      u.uRbcA.value = f.rbcA
+      u.uPlantA.value = f.plantA
+      u.uFlat.value = f.tonicG
+      u.uG.value = f.tonicG
+      rbcMarks(cam.aspect).forEach((m, i) => {
+        u.uCellA.value[i].set(m.V, m.sph, m.cren, m.lysis)
+        u.uPos.value[i].set(m.x, m.y, m.z, m.s)
+      })
+      // plant cells: hypertonic plasmolyses, isotonic is flaccid, hypotonic is turgid
+      plantMarks(cam.aspect).forEach((m, i) => {
+        const plas = i === 0 ? f.plantA : 0
+        const turg = i === 2 ? f.plantA : 0
         u.uPlant.value[i].set(0.05 + plas * 1.35 + (i === 1 ? 0.06 : 0), plas, turg, 0)
+        u.uPPos.value[i].set(m.x, m.y, 0, m.s)
       })
       g.render(r, target)
+      return target
+    }
+    if (set === 'land') {
+      // while the picture is still visible, render the membrane it shows
+      let photo: THREE.Texture | null = null
+      if (f.landRise < 0.999) {
+        const Fp = f.F < (LAND_IN + LAND_OUT) / 2 ? LAND_IN : LAND_OUT
+        const look = this.placeCam(this.camB, 'mem', Fp)
+        this.syncSets(this.camB, look)
+        r.setRenderTarget(this.M)
+        r.clear(true, true, false)
+        r.render(this.memScene, this.camB)
+        photo = this.M.texture
+        r.setRenderTarget(target)
+      }
+      this.land.update(cam.aspect, photo)
+      r.render(this.land.scene, cam)
       return target
     }
     const g = this.glass.bulk
@@ -318,6 +367,7 @@ export class Engine {
     return [(this._p.x * 0.5 + 0.5) * this.w, (-this._p.y * 0.5 + 0.5) * this.h, this._p.z < 1]
   }
   scaleText() {
+    if (film.outer === 'land') return 'free energy, not distance'
     const cam = this.camA
     const d = cam.position.distanceTo(this._look)
     const hWorld = 2 * d * Math.tan(((cam.fov * Math.PI) / 180) / 2)
@@ -336,6 +386,8 @@ export class Engine {
     U.uScrollVel.value = scroll.velN
     const f = updateFilm(scroll.F)
     U.uPaper.value = f.paper
+    // flashes: the vesicle fusing, ATP being split in the landscape
+    U.uFlash.value = f.fuse > 0 && f.fuse < 1 ? Math.sin(f.fuse * Math.PI) * 1.2 : 0
     this.flowT += dt * (0.25 + 0.75 * smooth(4, 37, f.temp))
     this.bil.uniforms.uFlowT.value = this.flowT
 
@@ -399,6 +451,15 @@ export class Engine {
     fu.uBloomAmt.value = f.outer === 'cell' ? 0.55 : 0.4
     fu.uVignette.value = f.vignette
     fu.uGrain.value = 0.03
+    // the spotlight: everything but the subject dims and softens
+    const e = this.spotE
+    const k = Math.min(1, dt * 5)
+    e.x += (this.spot.x - e.x) * k
+    e.y += (this.spot.y - e.y) * k
+    e.r += (this.spot.r - e.r) * k
+    e.amt += (this.spot.amt - e.amt) * Math.min(1, dt * 3)
+    fu.uSpot.value.set(e.x / this.w, 1 - e.y / this.h, e.r / this.h)
+    fu.uSpotAmt.value = e.amt * (1 - f.paper)
     this.finalP.render(r, null)
 
     /* keep the frame budget: if frames run long, drop resolution a step */
